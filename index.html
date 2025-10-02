@@ -6,7 +6,6 @@
   <title>500 злобных карт — мультиплеер</title>
   <style>
     :root {
-
       --bg:#0d1016;
       --panel:#171b27;
       --panel-soft:rgba(23,27,39,0.86);
@@ -163,20 +162,16 @@
       z-index:120;
     }
     .toast.show{opacity:1;pointer-events:auto;transform:translate(-50%, -4px);}
-
     #actionBar{
       position:fixed;
       left:50%;
       transform:translateX(-50%);
-
       bottom:calc(16px + var(--safe-bottom));
       width:min(560px,calc(100vw - 28px));
-
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:14px;
-
       padding:16px 18px;
       background:rgba(20,23,34,.96);
       border:1px solid rgba(255,255,255,.08);
@@ -222,7 +217,6 @@
       .primary, .ghost-rounded{font-size:16px;}
       #shareRow{flex-direction:column;align-items:stretch;}
       table.scoreboard td{font-size:15px;}
-
     }
   </style>
 </head>
@@ -239,7 +233,6 @@
     </div>
   </header>
   <div class="wrap">
-
     <main id="screenCreate" class="active" aria-live="polite">
       <section class="card">
         <h1>Создать комнату</h1>
@@ -256,10 +249,8 @@
           <button id="btnCreateRoom" class="primary">Создать комнату</button>
           <span id="createError" class="muted" style="color:#ffb1c5;min-height:20px;" aria-live="assertive"></span>
         </div>
-
       </section>
     </main>
-
 
     <main id="screenJoin" aria-live="polite">
       <section class="card">
@@ -273,11 +264,9 @@
         <div class="actions-row">
           <button id="btnJoinRoom" class="primary">Присоединиться</button>
           <span id="joinError" class="muted" style="color:#ffb1c5;min-height:20px;" aria-live="assertive"></span>
-
         </div>
       </section>
     </main>
-
 
     <main id="screenGame" aria-live="polite">
       <section class="card" id="shareSection">
@@ -316,11 +305,9 @@
           <div class="actions-row" style="margin-top:16px;">
             <button id="btnNextRound" class="primary">Следующий раунд</button>
             <span id="resultHint" class="muted small"></span>
-
           </div>
         </div>
       </section>
-
 
       <section class="card" style="margin-top:18px;">
         <div class="section-title" style="margin:0 0 14px;">
@@ -379,7 +366,6 @@
       <pre id="testsOutput" style="font-family:ui-monospace;white-space:pre-wrap;font-size:13px;line-height:1.5;">—</pre>
       <menu style="margin-top:16px;">
         <button class="ghost-rounded">Закрыть</button>
-
       </menu>
     </form>
   </dialog>
@@ -387,7 +373,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
-
   const STATUS = { LOBBY:'lobby', COLLECT:'collect', RESULT:'result' };
   const MIN_PLAYERS = 2;
   const ROUNDS_TOTAL = 10;
@@ -420,13 +405,11 @@
     'Новое хобби, о котором стыдно рассказать родителям: ____.',
     'Завтрак чемпиона — ____.',
     'Путь к успеху начинается с ____.',
-
   ], white:[
     'йога при свете лампы','безлимитные мемы','кот, который судит тебя','презентация на 200 слайдов','звуки леса в 3 часа ночи','микродозы энтузиазма','ежедневник на 2035 год','кофе уровня босс','танец с пылесосом','срочный созвон ни о чём','переписка с самим собой','зарядка для лица и совести','подкаст, который никто не слушает','коллекция несбывшихся целей','плед ответственности','удалённая пятница','загадочный дедлайн','ночной поход в холодильник','тик-ток для взрослых — чтение','случайный акт продуктивности'
   ], nsfwBlack:[], nsfwWhite:[] };
 
   function ensureMinimumDeck(base){
-
     const MIN_BLACK=120, MIN_WHITE=500;
     const adj=['бескомпромиссный','легендарный','скромный','хрупкий','стальной','мягкий','неудобный','удивительный','космический','тактический','нулевой','случайный','домашний','турбо','антистресс','чистосердечный','ботанский','карманный','праздничный','грустный','героический','виноватый','странный','панический','осознанный','вафельный','экологичный','умный','сверхважный','необъяснимый'];
     const noun=['кактус','ежедневник','кекс','плед','римейк детства','кот в коробке','танец победителя','утренний ритуал','план Б','зум-созвон','марафон сериалов','пакет багов','диванный стартап','апдейт настроения','чай без сахара','стакан воды','неловкая пауза','электронная очередь','перерыв на себя','похвала самому себе','карта желаний','фантазия','чистый стол','новый понедельник','таймер на 5 минут','пища для ума','сон днём','упражнение на растяжку','вдох через нос','молчаливое согласие'];
@@ -492,28 +475,22 @@
   let db=null, firebaseInitError=null, connectivityOk=false, lastConnMsg='';
   try{ firebase.initializeApp(FIREBASE_CONFIG); db=firebase.database(); }catch(e){ firebaseInitError=e; console.error('Firebase init error',e); }
 
-
   async function testDbConnection(){
     if(!db){ lastConnMsg='Firebase не инициализирован'; updateConnStatus(false,lastConnMsg); return false; }
     try{
-
       const ping=db.ref('_ping').push();
       await ping.set({ t:now(), ua:navigator.userAgent.slice(0,80) });
       await ping.remove();
-
       lastConnMsg='OK: есть доступ к Realtime DB';
       updateConnStatus(true,lastConnMsg);
       return true;
     }catch(e){
-
       lastConnMsg=normalizeError(e);
-
       updateConnStatus(false,lastConnMsg);
       return false;
     }
   }
   function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: '+(ok?'подключено':'ошибка'); el.title=msg||''; el.style.background=ok?'var(--accent-2)':'var(--chip)'; }
-
 
   const roomRef=()=>db.ref(`rooms/${local.roomId}`);
   const stateRef=()=>roomRef().child('state');
@@ -552,7 +529,7 @@
     unsubscribeAll();
     stateRef().on('value',snap=>{ const s=snap.val(); if(!s) return; game.state=s; renderState(); startTimerTick(); });
     playersRef().on('value',snap=>{ const players=snap.val()||{}; game.players=players; renderPlayers(); if(local.isCreator) syncPlayersOrder(); ensureHostValidity(); updateProgressChip(); maybeAutoStart(); });
-    orderRef().on('value',snap=>{ const arr=snap.val(); if(Array.isArray(arr)){ game.playersOrder=arr; ensureHostValidity(); updateProgressChip(); } });
+    orderRef().on('value',snap=>{ const arr=snap.val(); if(Array.isArray(arr)){ game.playersOrder=arr; ensureHostValidity(); updateProgressChip(); maybeAutoStart(); } });
     submissionsRef().on('value',snap=>{ const map=snap.val()||{}; renderSubmissions(map); });
     perPlayerRef(local.playerId).on('value',snap=>{ const data=snap.val()||{hand:[],submitted:false,lastText:''}; local.activeHand=data.hand||[]; local.hasSubmitted=!!data.submitted; local.submittedText=data.lastText||''; renderHand(local.activeHand); updateHandState(); updateActionBar(); });
     if(local.isCreator){
@@ -588,14 +565,12 @@
     } else {
       await orderRef().set([local.playerId]);
     }
-
   }
 
   // ===== Комната: создание и вход =====
   async function createRoom(){
     if(!db){ showError(firebaseInitError||'Firebase не инициализирован'); return; }
     if(!(connectivityOk || await testDbConnection())) return;
-
     try{
       const playerName=validateNameValue($('#createName').value);
       const roomId=($('#createRoomId').value||'').trim().toUpperCase();
@@ -684,13 +659,11 @@
     } else {
       await collectWhiteToDiscard(submissions);
       await stateRef().update({ status:STATUS.RESULT, lastWinnerName:'', lastAnswer:'', timerEndsAt:null });
-
     }
     updateSelectionUI();
     updateHostHint();
     updateActionBar();
   }
-
 
   async function collectWhiteToDiscard(submissions){
     Object.values(submissions||{}).forEach(s=>{ if(s&&s.text) game.deck.discardWhite.push(s.text); });
@@ -824,19 +797,17 @@
         if(idx===local.selectedIndex) btn.classList.add('selected');
       }
       container.appendChild(btn);
-
     });
     if (disabled){
-      local.selectedCardIndex = null;
-      local.selectedCardText = '';
-    } else if (local.selectedCardIndex !== null && local.selectedCardIndex >= hand.length){
-      local.selectedCardIndex = null;
-      local.selectedCardText = '';
+      local.selectedIndex = null;
+      local.selectedText = '';
+    } else if (local.selectedIndex !== null && local.selectedIndex >= hand.length){
+      local.selectedIndex = null;
+      local.selectedText = '';
     }
     refreshHandSelectionStyles();
     updateSelectionUI();
   }
-
 
   function selectCard(idx,text,btn){
     if(game.state.status!==STATUS.COLLECT) return;
@@ -883,11 +854,9 @@
         btn.disabled=true;
       }
       list.appendChild(btn);
-
     });
     updateProgressChip();
   }
-
 
   function updateProgressChip(){
     const chip=$('#progressChip'); if(!chip) return;
@@ -1025,7 +994,7 @@
     const order=['p1','p2','p3'];
     expect(nextHostId(order,null)==='p1','first host не p1');
     expect(nextHostId(order,'p1')==='p2','p1 -> p2');
-    expect(nextHostId(order,'p3')==='p1','p3 -> p1');
+    expect(nextHostId(order,'p3')==='p1','п3 -> p1');
   });
 
   test('раздача до 7 белых всем не-ведущим',()=>{
@@ -1034,7 +1003,7 @@
     const fill=simulateHandFill(order,'host',hands,['d','e','f','g','h','i','j','k','l']);
     expect(fill.host.length===0,'host должен остаться без карт');
     expect(fill.p1.length===7,'p1 добирает до 7');
-    expect(fill.p2.length===7,'p2 добирает до 7');
+    expect(fill.p2.length===7,'п2 добирает до 7');
   });
 
   test('таймер авто-выбор победителя',()=>{
@@ -1066,6 +1035,5 @@
   <!-- TODO -->
   <!-- - Вынести таймер на сервер и добавить анти-спам для событий. -->
   <!-- - Расширить анимации открытия ответов и финального экрана. -->
-
 </body>
 </html>
