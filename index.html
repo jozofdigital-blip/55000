@@ -67,7 +67,6 @@
       <div class="bar">
         <span id="connStatus" class="chip" title="Проверка соединения">Статус: не проверено</span>
         <button id="btnNew">Новая игра</button>
-        <button class="ghost" id="btnMenu">Меню</button>
       </div>
     </header>
 
@@ -153,54 +152,6 @@
     </div>
 
     <!-- МОДАЛКИ -->
-    <dialog id="dlgMenu">
-      <form method="dialog" class="card" style="min-width:min(360px,90vw);">
-        <h2>Меню</h2>
-        <div class="row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:8px;">
-          <button type="button" id="menuCheck">Проверить соединение</button>
-          <button type="button" id="menuDeck" class="ghost">Колода</button>
-          <button type="button" id="menuRules" class="ghost">Правила</button>
-        </div>
-        <menu class="row" style="justify-content:flex-end; margin-top:12px;">
-          <button class="ghost">Закрыть</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <dialog id="dlgRules">
-      <form method="dialog" class="card" style="min-width:min(680px,90vw);">
-        <h2>Правила (коротко)</h2>
-        <ol class="muted" style="line-height:1.6;">
-          <li>Один создаёт комнату и становится ведущим (host).</li>
-          <li>Все вводят имя и заходят по ссылке комнаты.</li>
-          <li>Игроки выбирают ответы из своей руки, ведущий выбирает лучший.</li>
-          <li>Победитель получает 1 очко.</li>
-        </ol>
-        <menu class="row" style="justify-content:flex-end; margin-top:8px;">
-          <button class="ghost">Закрыть</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <dialog id="dlgDeck">
-      <form method="dialog" class="card" style="min-width:min(880px,96vw);">
-        <h2>Колода</h2>
-        <p class="muted">Редактируйте или импортируйте JSON. Формат: <span class="mono">{"black":[],"white":[],"nsfwBlack":[],"nsfwWhite":[]}</span></p>
-        <div class="row"><textarea id="deckJson" rows="12" style="width:100%"></textarea></div>
-        <div class="row" style="justify-content:space-between;margin-top:8px;">
-          <div class="row">
-            <button type="button" class="ghost" id="btnImport">Импорт JSON…</button>
-            <button type="button" class="ghost" id="btnExport">Экспорт JSON</button>
-            <button type="button" class="ghost" id="btnResetDeck">Сбросить к демо</button>
-          </div>
-          <menu class="row">
-            <button class="ghost">Закрыть</button>
-            <button type="button" id="btnSaveDeck">Сохранить</button>
-          </menu>
-        </div>
-      </form>
-    </dialog>
-
   </div>
 
   <div id="toast" class="toast hidden"></div>
@@ -306,11 +257,13 @@
 
   // ===== Работа с колодой (на стороне ведущего) =====
   function loadDeckLocal(){
-    const raw = localStorage.getItem(STORAGE_KEY); let base = DEMO_DECK; if (raw){ try{ base = JSON.parse(raw);}catch(e){ console.warn('Bad deck JSON'); } }
+    const raw = localStorage.getItem(STORAGE_KEY); let base = DEMO_DECK;
+    if (raw){ try{ base = JSON.parse(raw);}catch(e){ console.warn('Bad deck JSON'); } }
     ensureMinimumDeck(base);
+    const prepared = JSON.stringify(base);
+    localStorage.setItem(STORAGE_KEY, prepared);
     const black=[...base.black], white=[...base.white];
     game.deck.black = shuffle(black); game.deck.white = shuffle(white);
-    $('#deckJson').value = JSON.stringify(base, null, 2);
   }
   function drawBlack(){ if(!game.deck.black.length){ game.deck.black = shuffle(game.deck.discardBlack); game.deck.discardBlack = []; } return game.deck.black.pop() || '— пусто —'; }
   function drawWhite(){ if(!game.deck.white.length){ game.deck.white = shuffle(game.deck.discardWhite); game.deck.discardWhite = []; } return game.deck.white.pop() || '— пусто —'; }
@@ -690,15 +643,6 @@
   }
 
   // ===== Обработчики =====
-  function closeMenu(){ const dlg = $('#dlgMenu'); if (dlg && typeof dlg.close==='function' && dlg.open) dlg.close(); }
-  $('#btnMenu').onclick=()=> $('#dlgMenu').showModal();
-  $('#menuRules').onclick=()=>{ closeMenu(); $('#dlgRules').showModal(); };
-  $('#menuDeck').onclick=()=>{ closeMenu(); $('#dlgDeck').showModal(); };
-  $('#menuCheck').onclick=async()=>{ closeMenu(); await testDbConnection(); toast('Проверка: '+ lastConnMsg); };
-  $('#btnSaveDeck').onclick=()=>{ try{ const j=JSON.parse($('#deckJson').value); localStorage.setItem(STORAGE_KEY, JSON.stringify(j)); toast('Колода сохранена'); if(local.isHost) loadDeckLocal(); }catch(e){ alert('Ошибка JSON: '+e.message);} };
-  $('#btnResetDeck').onclick=()=>{ localStorage.removeItem(STORAGE_KEY); if(local.isHost) loadDeckLocal(); $('#deckJson').value=JSON.stringify(DEMO_DECK,null,2); toast('Сбросили к демо'); };
-  $('#btnExport').onclick=()=>{ const blob=new Blob([$('#deckJson').value],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='deck.json'; a.click(); };
-  $('#btnImport').onclick=async()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; $('#deckJson').value=await f.text(); }; inp.click(); };
   $('#btnNew').onclick=()=> location.href = location.origin + location.pathname;
   $('#btnCreate').onclick=async()=>{ await createRoom(); };
   $('#btnJoin').onclick=async()=>{ const id=($('#roomInput').value||'').trim(); if(!id) return toast('Введите ID комнаты'); await joinRoom(id); };
@@ -719,7 +663,6 @@
   // ===== Инициализация =====
   function init(){
     $('#playerName').value = localStorage.getItem('playerName') || '';
-    $('#deckJson').value = JSON.stringify(DEMO_DECK, null, 2);
     const room = new URL(location.href).searchParams.get('room'); if (room){ $('#roomInput').value=room; $('#shareRow').style.display='flex'; $('#shareLink').value=location.href; }
     if (firebaseInitError){ updateConnStatus(false, 'Ошибка инициализации: '+firebaseInitError.message); }
   }
