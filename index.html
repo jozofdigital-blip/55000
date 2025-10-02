@@ -64,7 +64,6 @@
         <button class="ghost" id="btnHow">Правила</button>
         <button class="ghost" id="btnTests">🧪 Тесты</button>
         <button id="btnNew">Новая игра</button>
-        <button class="ghost hidden" id="btnStart">Старт игры (ведущий)</button>
         <button class="ghost hidden" id="btnToJudge">→ Фаза судьи</button>
       </div>
     </header>
@@ -352,17 +351,9 @@
     if (!db || !local.roomId) return;
     stateRef().off(); playersRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off();
     stateRef().on('value', snap=>{ const s=snap.val(); if(!s) return; game.state = s; renderState(); });
-    playersRef().on('value', snap=>{ const players = snap.val()||{}; playersCount = Object.keys(players).length; renderPlayers(players); maybeAutoStart(players); updateHostButtons(); });
+    playersRef().on('value', snap=>{ const players = snap.val()||{}; playersCount = Object.keys(players).length; renderPlayers(players); maybeAutoStart(players); });
     submissionsRef().on('value', snap=>{ renderSubmissions(snap.val()||{}); });
     perPlayerRef(local.playerId).on('value', snap=>{ renderHand((snap.val()&&snap.val().hand)||[]); });
-  }
-
-  function updateHostButtons(){
-    const startBtn = $('#btnStart');
-    if (startBtn){
-      startBtn.disabled = playersCount < 2;
-      startBtn.title = playersCount < 2 ? 'Нужно минимум 2 игрока' : '';
-    }
   }
 
   async function registerPlayer(){
@@ -411,11 +402,8 @@
     $('#phaseJudge').classList.toggle('hidden', s.phase!=='judge');
     $('#phaseWinner').classList.toggle('hidden', s.phase!=='winner');
     // Кнопки ведущего
-    const showStart = local.isHost && s.phase==='lobby';
     const showToJudge = local.isHost && s.phase==='hands';
-    $('#btnStart')?.classList.toggle('hidden', !showStart);
     $('#btnToJudge')?.classList.toggle('hidden', !showToJudge);
-    updateHostButtons();
   }
 
   function renderPlayers(players){
@@ -426,6 +414,22 @@
       row.innerHTML=`<div>${escapeHtml(p.name)} ${p.isJudge?'<span class="small muted">(судья)</span>':''}</div><div class="chip">${p.score||0}</div>`;
       box.appendChild(row);
     });
+  }
+
+  function orderedPlayerIds(players){
+    return Object.keys(players||{}).sort((a,b)=>{
+      const ja = players[a]?.joinedAt || 0;
+      const jb = players[b]?.joinedAt || 0;
+      if (ja !== jb) return ja - jb;
+      return a.localeCompare(b);
+    });
+  }
+
+  async function setJudgeFlags(ids, judgeId){
+    if (!ids.length) return;
+    const updates={};
+    ids.forEach(pid=>{ updates[`${pid}/isJudge`] = pid === judgeId; });
+    await playersRef().update(updates);
   }
 
   function renderHand(hand){
@@ -473,12 +477,13 @@
     if (playersCount < 2) return toast('Нужно минимум 2 игрока');
     // подготовка: назначить судью 0, выдать карты всем, чёрную карту
     game.state.round=1; game.state.phase='hands'; game.state.roundsTotal=10; game.state.judgeIndex=0;
-    const playersSnap = await playersRef().get(); const players = playersSnap.val()||{}; const ids = Object.keys(players);
+    const playersSnap = await playersRef().get(); const players = playersSnap.val()||{}; const ids = orderedPlayerIds(players);
     // руки уже выданы при регистрации; убедимся, что у всех по 7
     for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
     const judgeId = ids[0] || null; const judgeName = judgeId ? players[judgeId].name : '—';
     const black = drawBlack();
     await stateRef().set({ ...game.state, judgeId, judgeName, blackCard:black, sfwOnly: $('#sfwOnly').checked });
+    await setJudgeFlags(ids, judgeId);
     await submissionsRef().remove();
     await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white, discardBlack: game.deck.discardBlack, discardWhite: game.deck.discardWhite });
   }
@@ -496,13 +501,14 @@
   async function nextRoundHost(){
     if (!local.isHost) return; const sSnap = await stateRef().get(); const s = sSnap.val(); if (!s) return;
     if (s.round >= s.roundsTotal) { toast('Игра окончена'); return; }
-    const players = (await playersRef().get()).val()||{}; const ids = Object.keys(players);
+    const players = (await playersRef().get()).val()||{}; const ids = orderedPlayerIds(players);
     const judgeIdx = (ids.indexOf(s.judgeId)+1) % ids.length; const judgeId = ids[judgeIdx]; const judgeName = players[judgeId].name;
     // новая чёрная, очистить submissions, добрать по 1 карте всем
     for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
     await submissionsRef().remove();
     const black = drawBlack();
     await stateRef().set({ ...s, round: s.round+1, judgeId, judgeName, blackCard:black, phase:'hands' });
+    await setJudgeFlags(ids, judgeId);
   }
 
   // ===== Тесты (локальные для чистых функций) =====
@@ -532,7 +538,6 @@
   $('#btnCreate').onclick=async()=>{ await createRoom(); };
   $('#btnJoin').onclick=async()=>{ const id=($('#roomInput').value||'').trim(); if(!id) return toast('Введите ID комнаты'); await joinRoom(id); };
   $('#btnCopy').onclick=()=>{ navigator.clipboard.writeText($('#shareLink').value); toast('Ссылка скопирована'); };
-  $('#btnStart').onclick = startGameHost;
   $('#btnToJudge').onclick = toJudgePhaseHost;
   $('#nextRound').onclick=nextRoundHost;
 
