@@ -22,6 +22,7 @@
       --safe-bottom:env(safe-area-inset-bottom);
     }
     *{box-sizing:border-box}
+
     body{
       margin:0;
       font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,"Noto Sans","Helvetica Neue",Arial;
@@ -348,7 +349,9 @@
     const adj=["бескомпромиссный","легендарный","скромный","хрупкий","стальной","мягкий","неудобный","удивительный","космический","тактический","нулевой","случайный","домашний","турбо","антистресс","чистосердечный","ботанский","карманный","праздничный","грустный","героический","виноватый","странный","панический","осознанный","вафельный","экологичный","умный","сверхважный","необъяснимый"];
     const noun=["кактус","ежедневник","кекс","плед","римейк детства","кот в коробке","танец победителя","утренний ритуал","план Б","зум-созвон","марафон сериалов","пакет багов","диванный стартап","апдейт настроения","чай без сахара","стакан воды","неловкая пауза","электронная очередь","перерыв на себя","похвала самому себе","карта желаний","фантазия","чистый стол","новый понедельник","таймер на 5 минут","пища для ума","сон днём","упражнение на растяжку","вдох через нос","молчаливое согласие"];
     const tails=["в подарок","в 3 часа ночи","по подписке","на скорую руку","в режиме инкогнито","без уведомлений","с доставкой завтра","по любви","на удалёнке","с закрытыми глазами","с одобрения кота","вместо спорта","в вдохновляющей форме","без инструкции","с минимальными усилиями","в последнюю секунду","с видом на кухню","в пределах разумного","на полном серьёзе","для галочки","с огоньком","по выходным","для души","под настроение","как-нибудь потом","в хорошем смысле","не для отчёта","по приколу","по старой памяти","без причин"];
+
     const blackSeed=["Мой день начинается с ____.","На совещании лучше не обсуждать ____.","Секрет успешного проекта — ____.","Сегодняшний план: кофе, дела и ____.","Самый странный подарок — ____.","Я бы с радостью заменил(а) гимн на ____.","Когда никто не видит, я практикую ____.","Лучшее, что можно добавить в резюме — ____.","Идеальное алиби: ____.","Главный антистресс — ____.","Спорим, в 2035 мы будем платить за ____.","В корпоративном чате забанили тему ____.","Главная фича нового айфона — ____.","Если бы у меня был слоган, он бы был про ____.","На TED я выступлю про ____.","Мой внутренний критик обожает ____.","Шеф мечтает внедрить ____.","User story на сегодня — ____.","Я официально отказываюсь от ____.","Сегодня отменяется всё, кроме ____."];
+
     function genWhite(i){ return `${adj[i%adj.length]} ${noun[(i*7)%noun.length]} ${tails[(i*13)%tails.length]}`; }
     const needW=Math.max(0,MIN_WHITE-(base.white?.length||0));
     for(let i=0;i<needW;i++) base.white.push(genWhite(i));
@@ -416,6 +419,7 @@
     }
   }
 
+
   // ===== Состояние клиента =====
   const local = {
     playerId: localStorage.getItem('playerId') || uid(),
@@ -442,6 +446,7 @@
     timers:{},
   };
 
+
   function orderedPlayerIds(players){
     return Object.keys(players||{}).sort((a,b)=>{
       const pa=players[a]||{}; const pb=players[b]||{};
@@ -451,8 +456,10 @@
     });
   }
 
+
   function isCurrentHost(){ return local.playerId && game.state.currentHostPid === local.playerId; }
   function isStatusCollect(){ return (game.state.status||STATUS.LOBBY) === STATUS.COLLECT; }
+
 
   // ===== Firebase ссылки =====
   const roomRef = ()=> db.ref(`rooms/${local.roomId}`);
@@ -464,6 +471,7 @@
   const playersOrderRef = ()=> roomRef().child('playersOrder');
   const eventsRef = ()=> roomRef().child(EVENTS_PATH);
 
+
   function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: ' + (ok?'подключено':'ошибка'); el.title=msg||''; el.style.background= ok ? 'var(--accent-2)' : 'var(--chip)'; }
 
   // ===== Имя и валидация =====
@@ -472,6 +480,7 @@
     if(raw.length<2) throw new Error('Имя должно быть длиннее 1 символа.');
     if(/^[0-9]+$/.test(raw)) throw new Error('Имя не может состоять только из цифр.');
     return raw.slice(0,24);
+
   }
 
   function setLobbyError(msg){ const box=$('#lobbyError'); if(box){ box.textContent=msg||''; } }
@@ -530,9 +539,11 @@
     local.isCreator = true;
     loadDeckLocal();
     try{
+
       await roomRef().set({ hostId: local.playerId, createdAt: now() });
       await stateRef().set({ status:STATUS.LOBBY, round:0, roundsTotal:10, blackCard:'', lastWinnerName:'', lastAnswer:'', sfwOnly: $('#sfwOnly').checked, currentHostPid:null, currentHostName:'', timerEndsAt:null });
       await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
+
       await registerPlayer();
       subscribeRoom();
       updateShareLink();
@@ -554,6 +565,7 @@
   function updateShareLink(){
     const url=new URL(location.href); url.searchParams.set('room', local.roomId); $('#shareLink').value=url.toString(); $('#shareRow').style.display='flex'; history.replaceState(null,'',url);
   }
+
 
   // ===== Рендер =====
   function renderState(){
@@ -577,6 +589,7 @@
     if(status===STATUS.RESULT){
       $('#winnerLine').innerHTML = game.state.lastWinnerName ? `${escapeHtml(game.state.lastWinnerName)} получает очко за ${fillBlack(game.state.blackCard||'', game.state.lastAnswer||'')}` : 'В этом раунде не было победителя.';
       $('#resultHint').textContent = isCurrentHost() || local.isCreator ? 'Ведущий запускает следующий раунд.' : 'Ждём ведущего.';
+
     }
     updateSelectionUI();
     updateHostHint();
@@ -604,6 +617,7 @@
     updateStartControls();
   }
 
+
   function renderHand(hand){
     const box=$('#handCards'); if(!box) return;
     box.innerHTML='';
@@ -619,6 +633,7 @@
         btn.onclick=()=> selectCard(i, txt);
       }
       box.appendChild(btn);
+
     });
     if(disabled){
       local.selectedCardIndex=null;
@@ -663,6 +678,7 @@
     updateHostHint();
   }
 
+
   // ===== Выбор карты =====
   function selectCard(idx, text){
     if(isCurrentHost()) return;
@@ -682,10 +698,48 @@
       el.classList.toggle('selected', isSelected);
       el.classList.toggle('disabled', !canPick);
       if(el instanceof HTMLButtonElement){ el.disabled = !canPick; }
+
+    });
+    if (disabled){
+      local.selectedCardIndex = null;
+      local.selectedCardText = '';
+    } else if (local.selectedCardIndex !== null && local.selectedCardIndex >= hand.length){
+      local.selectedCardIndex = null;
+      local.selectedCardText = '';
+    }
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+  }
+
+  function selectCard(idx, text){
+    if (local.hasSubmitted) return;
+    if ((game.state.status||'')!=='collect') return;
+    local.selectedCardIndex = idx;
+    local.selectedCardText = text;
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+  }
+
+  function refreshHandSelectionStyles(){
+    const status = game.state.status || 'lobby';
+    const canPick = status==='collect' && !local.hasSubmitted;
+    $$('#handCards .card').forEach(el=>{
+      const idx = Number(el.dataset.index);
+      const isSelected = idx === local.selectedCardIndex && canPick;
+      el.classList.toggle('selected', isSelected);
+      el.classList.toggle('disabled', !canPick);
+      if (canPick){
+        el.classList.add('selectable');
+        if (el instanceof HTMLButtonElement) el.disabled = false;
+      } else {
+        el.classList.remove('selectable');
+        if (el instanceof HTMLButtonElement) el.disabled = true;
+      }
     });
   }
 
   function updateSelectionUI(){
+
     const hint=$('#selectionHint'); if(!hint) return;
     if(isCurrentHost()){
       hint.textContent = 'Вы ведущий — наблюдайте за ответами и выберите победителя.';
@@ -718,6 +772,7 @@
     if(local.hasSubmitted){ hint.textContent='Вы уже отправили карту. Ждём ведущего.'; btn.disabled=true; }
     else if(local.selectedCardIndex==null){ hint.textContent='Выберите карту и подтвердите отправку.'; btn.disabled=true; }
     else { hint.textContent='Готово! Подтвердите выбор, карта исчезнет из руки.'; btn.disabled=false; }
+
   }
 
   function updateHostHint(){
@@ -816,6 +871,7 @@
     const ev=snap.val(); const key=snap.key;
     if(!ev) return;
     try{
+
       switch(ev.type){
         case 'needHand': await handleNeedHand(ev); break;
         case 'pickWinner': await handlePickWinner(ev); break;
@@ -966,6 +1022,7 @@
     await stateRef().set({ status:STATUS.COLLECT, round, roundsTotal: state.roundsTotal||10, blackCard:black, lastWinnerName:'', lastAnswer:'', sfwOnly: state.sfwOnly, currentHostPid: currentHost, currentHostName: hostName, timerEndsAt });
     await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
     game.submissionsOrder=[];
+
   }
 
   // ===== Таймер и кнопки =====
@@ -1018,6 +1075,7 @@
   test('fillBlack() placeholder',()=>{ const s=fillBlack('A ____ B','X'); expect(/<b>X<\/b>/.test(s),'no replace'); });
   test('fillBlack() no placeholder path',()=>{ const s=fillBlack('Привет','мир'); expect(/Привет\s—\s<b>мир<\/b>/.test(s),'no dash concat'); });
   test('escapeHtml() double quote',()=>{ const s=escapeHtml('"'); expect(s==='&quot;','not &quot;'); });
+
   test('orderedPlayerIds() сортирует по joinedAt',()=>{
     const players={ a:{joinedAt:3}, b:{joinedAt:1}, c:{joinedAt:2} };
     expect(JSON.stringify(orderedPlayerIds(players))===JSON.stringify(['b','c','a']),'order mismatch');
@@ -1052,6 +1110,7 @@
     expect(next.status===STATUS.RESULT,'status not result');
     expect(next.lastAnswer==='X','winner answer mismatch');
   });
+
 
   // ===== Автоподключение =====
   async function autoJoinFromURL(){
