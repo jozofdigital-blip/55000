@@ -236,7 +236,7 @@
     <main id="screenCreate" class="active" aria-live="polite">
       <section class="card">
         <h1>Создать комнату</h1>
-        <p class="muted">Придумайте имя и поделитесь ссылкой с друзьями. Игра стартует автоматически, когда присоединится минимум один игрок.</p>
+        <p class="muted">Придумайте имя и поделитесь ссылкой с друзьями. Игра стартует после нажатия «Начать игру» ведущим.</p>
         <div class="field-gap">
           <label>Ваше имя
             <input type="text" id="createName" maxlength="24" autocomplete="name" placeholder="Например, Катя" aria-required="true" />
@@ -274,31 +274,43 @@
           <input type="text" id="shareLink" readonly aria-label="Ссылка на комнату" />
           <button id="btnCopyLink" class="ghost-rounded">Скопировать ссылку</button>
         </div>
+
         <div class="status-board">
           <span class="chip" id="connStatus">Статус: не проверено</span>
           <span class="chip" id="timerChip" aria-live="polite" hidden>⏱ 60s</span>
           <span class="chip" id="progressChip" hidden>0/0</span>
           <span class="chip" id="roleChip" hidden>—</span>
         </div>
+
+        <!-- Действия в лобби для ведущего -->
+        <div id="lobbyActions" class="actions-row" style="display:none;margin-top:8px;">
+          <button id="btnStartGame" class="primary">Начать игру</button>
+          <span id="lobbyHint" class="muted small"></span>
+        </div>
+
         <div class="black-card" aria-live="polite">
           <div class="muted">Чёрная карта</div>
           <div id="blackText" style="margin-top:10px;font-size:20px;line-height:1.5;">—</div>
         </div>
         <div class="muted small" id="hostSummary" aria-live="polite">Статус: ожидание.</div>
+
         <div class="section-title">
           <h2>Ваши карты</h2>
         </div>
         <div class="muted small" id="handHint" aria-live="polite">Ожидаем раздачу.</div>
         <div class="cards-grid" id="handCards" style="margin-top:14px;"></div>
+
         <div id="submittedCard" class="winner-card" style="margin-top:16px;display:none;">
           <div class="muted small">Вы отправили</div>
           <div id="submittedText" style="margin-top:8px;font-size:18px;line-height:1.45;">—</div>
         </div>
+
         <div class="section-title" style="margin-top:28px;">
           <h2>Ответы на столе</h2>
         </div>
         <div id="submissionsHint" class="muted small" aria-live="polite">Ждём игроков.</div>
         <div id="submissionsList" class="cards-grid" style="margin-top:14px;"></div>
+
         <div id="resultBlock" class="winner-card" style="margin-top:28px;display:none;">
           <div class="muted small">Победитель раунда</div>
           <div id="winnerLine" style="margin-top:10px;font-size:18px;line-height:1.5;">—</div>
@@ -379,6 +391,7 @@
   const ROUND_TIMER_SECONDS = 60;
   const STORAGE_KEY = 'zlobnye_karty_deck_v2';
   const EVENTS_PATH = 'events';
+  const AUTO_START = false; // 🔴 отключили автостарт — запускает ведущий кнопкой
 
   const $ = (s)=>document.querySelector(s);
   const $$ = (s)=>Array.from(document.querySelectorAll(s));
@@ -528,8 +541,8 @@
     if(!db || !local.roomId) return;
     unsubscribeAll();
     stateRef().on('value',snap=>{ const s=snap.val(); if(!s) return; game.state=s; renderState(); startTimerTick(); });
-    playersRef().on('value',snap=>{ const players=snap.val()||{}; game.players=players; renderPlayers(); if(local.isCreator) syncPlayersOrder(); ensureHostValidity(); updateProgressChip(); maybeAutoStart(); });
-    orderRef().on('value',snap=>{ const arr=snap.val(); if(Array.isArray(arr)){ game.playersOrder=arr; ensureHostValidity(); updateProgressChip(); maybeAutoStart(); } });
+    playersRef().on('value',snap=>{ const players=snap.val()||{}; game.players=players; renderPlayers(); if(local.isCreator) syncPlayersOrder(); ensureHostValidity(); updateProgressChip(); if(AUTO_START) maybeAutoStart(); });
+    orderRef().on('value',snap=>{ const arr=snap.val(); if(Array.isArray(arr)){ game.playersOrder=arr; ensureHostValidity(); updateProgressChip(); if(AUTO_START) maybeAutoStart(); } });
     submissionsRef().on('value',snap=>{ const map=snap.val()||{}; renderSubmissions(map); });
     perPlayerRef(local.playerId).on('value',snap=>{ const data=snap.val()||{hand:[],submitted:false,lastText:''}; local.activeHand=data.hand||[]; local.hasSubmitted=!!data.submitted; local.submittedText=data.lastText||''; renderHand(local.activeHand); updateHandState(); updateActionBar(); });
     if(local.isCreator){
@@ -675,7 +688,7 @@
     const state=(await stateRef().get()).val()||{};
     const players=(await playersRef().get()).val()||{};
     const order=activeOrder();
-    if(order.length<MIN_PLAYERS){ await stateRef().update({ status:STATUS.LOBBY, timerEndsAt:null }); return; }
+    if(order.length<MIN_PLAYERS){ await stateRef().update({ status:STATUS.LOBBY, timerEndsAt:null }); toast('Нужно минимум 2 игрока'); return; }
     const baseCurrent = state.status===STATUS.LOBBY ? null : state.currentHostPid;
     const hostId = nextHostId(order, baseCurrent);
     const hostName = players[hostId]?.name || '—';
@@ -757,6 +770,18 @@
     const hostText = status===STATUS.LOBBY ? 'Ожидаем игроков.' : status===STATUS.COLLECT ? `Ведущий: ${escapeHtml(game.state.currentHostName||'—')}` : 'Раунд завершён.';
     $('#hostSummary').textContent = hostText;
     $('#handHint').textContent = buildHandHint(status);
+
+    // 🔵 Лобби: управляем видимостью кнопки "Начать игру"
+    const canStart = local.isCreator && status===STATUS.LOBBY;
+    const lobbyBlock = $('#lobbyActions');
+    const lobbyHint = $('#lobbyHint');
+    if (lobbyBlock){
+      const count = activeOrder().length;
+      lobbyBlock.style.display = canStart ? 'flex' : 'none';
+      lobbyHint.textContent = count<MIN_PLAYERS ? `Нужно минимум ${MIN_PLAYERS} игрока(ов). Сейчас: ${count}.` : `Готовы начать. Игроков: ${count}.`;
+      $('#btnStartGame').disabled = !(count>=MIN_PLAYERS);
+    }
+
     updateProgressChip();
   }
 
@@ -805,8 +830,8 @@
       local.selectedIndex = null;
       local.selectedText = '';
     }
-    refreshHandSelectionStyles();
-    updateSelectionUI();
+    refreshHandSelectionStyles?.();
+    updateSelectionUI?.();
   }
 
   function selectCard(idx,text,btn){
@@ -919,6 +944,11 @@
     await eventsRef().push({ type:'nextRound', t:now() });
   }
 
+  async function startGame(){
+    if(!local.isCreator){ showError('Стартует ведущий.'); return; }
+    await advanceRound(); // первый раунд
+  }
+
   function toggleMenu(){ $('#menuSheet').classList.toggle('hidden'); }
 
   function setupUI(){
@@ -946,6 +976,7 @@
     $('#btnCopyLink').onclick=()=>copyToClipboard($('#shareLink').value||'');
     $('#btnConfirm').onclick=submitCard;
     $('#btnNextRound').onclick=nextRound;
+    $('#btnStartGame').onclick=startGame;
     $('#menuBtn').onclick=toggleMenu;
     document.addEventListener('click',e=>{ if(!$('#menuSheet').classList.contains('hidden')){ const sheet=$('#menuSheet'); if(e.target.id==='menuBtn' || sheet.contains(e.target)) return; sheet.classList.add('hidden'); } });
     $('#menuRules').onclick=()=>{ $('#menuSheet').classList.add('hidden'); $('#dlgRules').showModal(); };
@@ -968,6 +999,7 @@
     renderOnStateChange();
   }
 
+  // простые "юнит"-тесты
   const tests=[];
   const test=(name,fn)=>tests.push({name,fn});
   const expect=(cond,msg)=>{ if(!cond) throw new Error(msg||'assert failed'); };
@@ -976,7 +1008,6 @@
     const players={a:{joinedAt:3},b:{joinedAt:1},c:{joinedAt:2}};
     expect(JSON.stringify(orderedPlayerIds(players))===JSON.stringify(['b','c','a']),'order mismatch');
   });
-
   test('одна отправка за раунд',()=>{
     const state={submitted:false};
     const mark=s=>{ if(s.submitted) throw new Error('повторный submit'); s.submitted=true; return s; };
@@ -984,28 +1015,24 @@
     let failed=false; try{ mark(state); }catch(e){ failed=true; }
     expect(failed,'submit прошёл второй раз');
   });
-
   test('topUpHand() добивает до 7',()=>{
     const hand=topUpHand(['a'],7);
     expect(hand.length===7,'hand size');
   });
-
   test('ротация ведущего по playersOrder',()=>{
     const order=['p1','p2','p3'];
     expect(nextHostId(order,null)==='p1','first host не p1');
     expect(nextHostId(order,'p1')==='p2','p1 -> p2');
-    expect(nextHostId(order,'p3')==='p1','п3 -> p1');
+    expect(nextHostId(order,'p3')==='п1','p3 -> p1');
   });
-
   test('раздача до 7 белых всем не-ведущим',()=>{
     const order=['host','p1','p2'];
     const hands={ host:['x'], p1:['a','b','c'], p2:[] };
     const fill=simulateHandFill(order,'host',hands,['d','e','f','g','h','i','j','k','l']);
     expect(fill.host.length===0,'host должен остаться без карт');
     expect(fill.p1.length===7,'p1 добирает до 7');
-    expect(fill.p2.length===7,'п2 добирает до 7');
+    expect(fill.p2.length===7,'p2 добирает до 7');
   });
-
   test('таймер авто-выбор победителя',()=>{
     const submissions={ a:{text:'X'}, b:{text:'Y'} };
     const pick=randomSubmissionKey(submissions,()=>0.6);
@@ -1013,6 +1040,11 @@
     const none=randomSubmissionKey({},()=>0.1);
     expect(none===null,'при пустом наборе null');
   });
+
+  // безопасные заглушки (если где-то этих функций нет)
+  function refreshHandSelectionStyles(){ /* no-op */ }
+  function updateSelectionUI(){ /* no-op */ }
+  function updateHostHint(){ /* no-op */ }
 
   window.runTests=async()=>{
     const results=[];
@@ -1024,16 +1056,7 @@
     $('#dlgTests').showModal();
   };
 
-  document.addEventListener('DOMContentLoaded',()=>{
-    start();
-  });
+  document.addEventListener('DOMContentLoaded',start);
   </script>
-  <!-- Что изменено -->
-  <!-- 1. Переписан стартовый поток: отдельные экраны создания и входа, бургер-меню и мобильный UI. -->
-  <!-- 2. Реализована автоматическая раздача, ротация ведущего, таймер и анонимные ответы через Firebase. -->
-  <!-- 3. Добавлены проверки имени, новая колода, подсказки и юнит-тесты ключевых сценариев. -->
-  <!-- TODO -->
-  <!-- - Вынести таймер на сервер и добавить анти-спам для событий. -->
-  <!-- - Расширить анимации открытия ответов и финального экрана. -->
 </body>
 </html>
