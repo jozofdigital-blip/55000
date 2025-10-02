@@ -143,8 +143,6 @@
     .scroll{max-height:320px;overflow:auto;padding-right:6px;}
     .scroll::-webkit-scrollbar{width:6px;}
     .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px;}
-    table.scoreboard{width:100%;border-collapse:separate;border-spacing:0 8px;}
-    table.scoreboard td{padding:8px 0;}
     .toast{
       position:fixed;
       left:50%;
@@ -187,7 +185,6 @@
     #shareRow input{flex:1;}
     .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 14px;}
     .winner-card{background:linear-gradient(135deg,rgba(37,208,162,.22),rgba(124,92,255,.22));border:1px solid rgba(124,92,255,.3);border-radius:22px;padding:20px;}
-    .placeholder{color:var(--muted);font-size:14px;padding:12px 0;}
     dialog{border:none;border-radius:24px;padding:0;background:rgba(11,13,19,.94);color:var(--text);box-shadow:0 28px 64px rgba(0,0,0,.6);}
     dialog::backdrop{background:rgba(5,7,11,.72);}
     dialog form{padding:24px;max-height:80vh;overflow:auto;}
@@ -232,9 +229,9 @@
       <button class="ghost-rounded menu-btn" id="menuNew" role="menuitem">Новая игра</button>
     </div>
   </header>
-  <div class="wrap">
 
-    <!-- Экран создания комнаты (для ведущего) -->
+  <div class="wrap">
+    <!-- Экран создания комнаты (ведущий) -->
     <main id="screenCreate" class="active" aria-live="polite">
       <section class="card">
         <h1>Создать комнату</h1>
@@ -254,7 +251,7 @@
       </section>
     </main>
 
-    <!-- НОВЫЙ минимальный экран: только имя и "Далее" при входе по ссылке -->
+    <!-- Экран с одним полем имени (игрок заходит по ссылке ?room=ID) -->
     <main id="screenNameOnly" aria-live="polite">
       <section class="card">
         <h1>Введите имя</h1>
@@ -389,28 +386,29 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>
+  // ===== Config & constants =====
   const STATUS = { LOBBY:'lobby', COLLECT:'collect', RESULT:'result' };
   const MIN_PLAYERS = 2;
   const ROUNDS_TOTAL = 10;
   const ROUND_TIMER_SECONDS = 60;
   const STORAGE_KEY = 'zlobnye_karty_deck_v2';
   const EVENTS_PATH = 'events';
-  const AUTO_START = false;
+  const AUTO_START = false; // ручной старт ведущим
 
-  const $ = (s)=>document.querySelector(s);
+  const $  = (s)=>document.querySelector(s);
   const $$ = (s)=>Array.from(document.querySelectorAll(s));
   const uid = ()=>Math.random().toString(36).slice(2,10);
   const now = ()=>Date.now();
   const shuffle = arr=>{ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
   const escapeHtml = str=>{ const map={ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }; return String(str||'').replace(/[&<>"']/g,ch=>map[ch]); };
   const fillBlack = (black,white)=>{ const safe=escapeHtml(white||'—'); return (black||'').includes('____') ? (black||'—').replace('____',`<b>${safe}</b>`) : `${escapeHtml(black||'—')} — <b>${safe}</b>`; };
-  const copyToClipboard = async(text)=>{ try{ await navigator.clipboard.writeText(text); toast('Ссылка скопирована'); }catch(e){ showError(e); } };
+  const $focus = (el)=>{ try{ el?.focus({preventScroll:true}); }catch{} };
 
-  let toastTimer=null;
-  function toast(msg){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2400); }
+  function toast(msg){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),2400); }
   function normalizeError(err){ if(!err) return 'Неизвестная ошибка'; if(typeof err==='string') return err; const code=err.code||''; if(code.includes('network')) return 'Нет соединения с Firebase.'; if(code.includes('permission')) return 'Недостаточно прав Firebase.'; if(code.includes('timeout')) return 'Время ожидания истекло.'; return err.message||'Что-то пошло не так.'; }
   function showError(err){ console.error(err); toast('Ошибка: '+normalizeError(err)); }
 
+  // ===== Demo deck =====
   const DEMO_DECK={ black:[
     'Лучшее средство от плохого настроения — ____.',
     'В офисе запретили ____ после прошлой вечеринки.',
@@ -438,6 +436,7 @@
     for(let i=0;i<needB;i++){ base.black.push(seeds[i%seeds.length]); }
   }
 
+  // ===== Game state =====
   const game={
     state:{ status:STATUS.LOBBY, round:0, roundsTotal:ROUNDS_TOTAL, blackCard:'', lastWinnerName:'', lastAnswer:'', currentHostPid:null, currentHostName:'', timerEndsAt:null },
     players:{},
@@ -462,8 +461,9 @@
   };
   localStorage.setItem('playerId', local.playerId);
 
+  // ===== Firebase =====
   const FIREBASE_CONFIG={
-    apiKey:"AIzaSyDRtpegXwTsSf77дPIOGDIyBFvib_GgUcM",
+    apiKey:"AIzaSyDRtpegXwTsSf77dPIOGDIyBFvib_GgUcM",
     authDomain:"z-e86ee.firebaseapp.com",
     databaseURL:"https://z-e86ee-default-rtdb.europe-west1.firebasedatabase.app",
     projectId:"z-e86ee",
@@ -476,7 +476,6 @@
   let db=null, firebaseInitError=null, connectivityOk=false, lastConnMsg='';
   try{ firebase.initializeApp(FIREBASE_CONFIG); db=firebase.database(); }catch(e){ firebaseInitError=e; console.error('Firebase init error',e); }
 
-  // ===== Firebase helpers =====
   const roomRef=()=>db.ref(`rooms/${local.roomId}`);
   const stateRef=()=>roomRef().child('state');
   const playersRef=()=>roomRef().child('players');
@@ -484,15 +483,26 @@
   const submissionsRef=()=>roomRef().child('submissions');
   const perPlayerRef=(pid)=>roomRef().child(`perPlayer/${pid}`);
   const deckRef=()=>roomRef().child('deck');
-  const eventsRef=()=>roomRef().child('events');
+  const eventsRef=()=>roomRef().child(EVENTS_PATH);
 
-  const $focus = (el)=>{ try{ el?.focus({preventScroll:true}); }catch{} };
+  async function testDbConnection(){
+    if(!db){ lastConnMsg='Firebase не инициализирован'; updateConnStatus(false,lastConnMsg); return false; }
+    try{
+      const ping=db.ref('_ping').push();
+      await ping.set({ t:now(), ua:navigator.userAgent.slice(0,80) });
+      await ping.remove();
+      lastConnMsg='OK: есть доступ к Realtime DB';
+      updateConnStatus(true,lastConnMsg);
+      return true;
+    }catch(e){
+      lastConnMsg=normalizeError(e);
+      updateConnStatus(false,lastConnMsg);
+      return false;
+    }
+  }
+  function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: '+(ok?'подключено':'ошибка'); el.title=msg||''; el.style.background=ok?'var(--accent-2)':'var(--chip)'; }
 
-  const MIN_PLAYERS = 2;
-
-  const uid = ()=>Math.random().toString(36).slice(2,10);
-  const now = ()=>Date.now();
-  const shuffle = arr=>{ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+  function unsubscribeAll(){ if(!local.roomId||!db) return; stateRef().off(); playersRef().off(); orderRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off(); eventsRef().off(); deckRef().off(); }
 
   function orderedPlayerIds(players){
     return Object.keys(players||{}).sort((a,b)=>{
@@ -514,72 +524,6 @@
   }
   function expectedSubmissions(){ return Math.max(0, activeOrder().length - 1); }
 
-  function unsubscribeAll(){ if(!local.roomId||!db) return; stateRef().off(); playersRef().off(); orderRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off(); eventsRef().off(); deckRef().off(); }
-
-  async function testDbConnection(){
-    if(!db){ lastConnMsg='Firebase не инициализирован'; updateConnStatus(false,lastConnMsg); return false; }
-    try{
-      const ping=db.ref('_ping').push();
-      await ping.set({ t:now(), ua:navigator.userAgent.slice(0,80) });
-      await ping.remove();
-      lastConnMsg='OK: есть доступ к Realtime DB';
-      updateConnStatus(true,lastConnMsg);
-      return true;
-    }catch(e){
-      lastConnMsg='Ошибка соединения: '+(e?.message||'');
-      updateConnStatus(false,lastConnMsg);
-      return false;
-    }
-  }
-  function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: '+(ok?'подключено':'ошибка'); el.title=msg||''; el.style.background=ok?'var(--accent-2)':'var(--chip)'; }
-
-  // ===== Deck helpers =====
-  const DEMO_DECK={ black:[
-    'Лучшее средство от плохого настроения — ____.',
-    'В офисе запретили ____ после прошлой вечеринки.',
-    'Мой тайный талант — ____.',
-    'Комбо дня: ____ с соусом из ____.',
-    'На первом свидании не советую обсуждать ____.',
-    'Учёные наконец-то придумали ____.',
-    'Самое неожиданное в подарок — ____.',
-    'Новое хобби, о котором стыдно рассказать родителям: ____.',
-    'Завтрак чемпиона — ____.',
-    'Путь к успеху начинается с ____.',
-  ], white:[
-    'йога при свете лампы','безлимитные мемы','кот, который судит тебя','презентация на 200 слайдов','звуки леса в 3 часа ночи','микродозы энтузиазма','ежедневник на 2035 год','кофе уровня босс','танец с пылесосом','срочный созвон ни о чём','переписка с самим собой','зарядка для лица и совести','подкаст, который никто не слушает','коллекция несбывшихся целей','плед ответственности','удалённая пятница','загадочный дедлайн','ночной поход в холодильник','тик-ток для взрослых — чтение','случайный акт продуктивности'
-  ], nsfwBlack:[], nsfwWhite:[] };
-
-  function ensureMinimumDeck(base){
-    const MIN_BLACK=120, MIN_WHITE=500;
-    const adj=['бескомпромиссный','легендарный','скромный','хрупкий','стальной','мягкий','неудобный','удивительный','космический','тактический','нулевой','случайный','домашний','турбо','антистресс','чистосердечный','ботанский','карманный','праздничный','грустный','героический','виноватый','странный','панический','осознанный','вафельный','экологичный','умный','сверхважный','необъяснимый'];
-    const noun=['кактус','ежедневник','кекс','плед','римейк детства','кот в коробке','танец победителя','утренний ритуал','план Б','зум-созвон','марафон сериалов','пакет багов','диванный стартап','апдейт настроения','чай без сахара','стакан воды','неловкая пауза','электронная очередь','перерыв на себя','похвала самому себе','карта желаний','фантазия','чистый стол','новый понедельник','таймер на 5 минут','пища для ума','сон днём','упражнение на растяжку','вдох через нос','молчаливое согласие'];
-    const tails=['в подарок','в 3 часа ночи','по подписке','на скорую руку','в режиме инкогнито','без уведомлений','с доставкой завтра','по любви','на удалёнке','с закрытыми глазами','с одобрения кота','вместо спорта','в хорошем смысле','без инструкции','с минимальными усилиями','в последнюю секунду','с видом на кухню','в пределах разумного','на полном серьёзе','для галочки','с огоньком','по выходным','для души','под настроение','как-нибудь потом','по приколу','по старой памяти','без причин'];
-    const seeds=['Мой день начинается с ____.','На совещании лучше не обсуждать ____.','Секрет успешного проекта — ____.','Сегодняшний план: кофе, дела и ____.','Самый странный подарок — ____.','Я бы с радостью заменил(а) гимн на ____.','Когда никто не видит, я практикую ____.','Лучшее, что можно добавить в резюме — ____.','Идеальное алиби: ____.','Главный антистресс — ____.','Спорим, в 2035 мы будем платить за ____.','В корпоративном чате забанили тему ____.','Главная фича нового айфона — ____.','Если бы у меня был слоган, он бы был про ____.','На TED я выступлю про ____.','Мой внутренний критик обожает ____.','Шеф мечтает внедрить ____.','User story на сегодня — ____.','Я официально отказываюсь от ____.','Сегодня отменяется всё, кроме ____.'];
-    const needW=Math.max(0,MIN_WHITE-(base.white?.length||0));
-    for(let i=0;i<needW;i++){ base.white.push(`${adj[i%adj.length]} ${noun[(i*7)%noun.length]} ${tails[(i*13)%tails.length]}`); }
-    const needB=Math.max(0,MIN_BLACK-(base.black?.length||0));
-    for(let i=0;i<needB;i++){ base.black.push(seeds[i%seeds.length]); }
-  }
-
-  function loadDeckLocal(){
-    let base; const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw){ try{ base=JSON.parse(raw); }catch(e){ base=JSON.parse(JSON.stringify(DEMO_DECK)); } }
-    else base=JSON.parse(JSON.stringify(DEMO_DECK));
-    ensureMinimumDeck(base);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
-    game.deck.black=shuffle([...base.black]);
-    game.deck.white=shuffle([...base.white]);
-    game.deck.discardBlack=[];
-    game.deck.discardWhite=[];
-    if($('#deckJson')) $('#deckJson').value=JSON.stringify(base,null,2);
-  }
-  function drawBlack(){ if(!game.deck.black.length){ game.deck.black=shuffle([...game.deck.discardBlack]); game.deck.discardBlack=[]; } return game.deck.black.pop()||'—'; }
-  function drawWhite(){ if(!game.deck.white.length){ game.deck.white=shuffle([...game.deck.discardWhite]); game.deck.discardWhite=[]; } return game.deck.white.pop()||'—'; }
-  function topUpHand(hand,target=7){ const arr=[...(hand||[])]; while(arr.length<target){ arr.push(drawWhite()); } return arr; }
-
-  // ===== Realtime listeners =====
-  function unsubscribeAll(){ if(!local.roomId||!db) return; stateRef().off(); playersRef().off(); orderRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off(); eventsRef().off(); deckRef().off(); }
-
   function subscribeRoom(){
     if(!db || !local.roomId) return;
     unsubscribeAll();
@@ -594,7 +538,7 @@
     }
   }
 
-  // ===== Game flow =====
+  // ===== Room join/create =====
   function showScreen(id){ ['screenCreate','screenNameOnly','screenGame'].forEach(s=>$('#'+s).classList.remove('active')); $('#'+id).classList.add('active'); }
   function enterGameUI(){ showScreen('screenGame'); if(local.isCreator){ $('#shareRow').style.display='flex'; updateShareLink(); } else $('#shareRow').style.display='none'; }
   function updateShareLink(){ const url=new URL(location.href); url.searchParams.set('room', local.roomId); $('#shareLink').value=url.toString(); history.replaceState(null,'',url); }
@@ -655,6 +599,26 @@
     }catch(e){ $('#nameOnlyError').textContent=normalizeError(e); showError(e); }
   }
 
+  function setupUI(){
+    const params=new URLSearchParams(location.search);
+    const room=params.get('room');
+    const savedName=localStorage.getItem('playerName')||'';
+    if(room){
+      local.roomId=room.toUpperCase();
+      local.isCreator=false;
+      showScreen('screenNameOnly');
+      $('#nameOnly').value=savedName;
+      setTimeout(()=>{$focus($('#nameOnly'));},0);
+    } else {
+      // Генерим удобный короткий ID
+      $('#createRoomId').value=(Math.random().toString(36).slice(2,8)).toUpperCase();
+      if(savedName) $('#createName').value=savedName;
+      showScreen('screenCreate');
+      setTimeout(()=>{$focus($('#createName'));},0);
+    }
+  }
+
+  // ===== Host actions & events =====
   async function handleHostEvent(snap){
     const ev=snap.val(); const key=snap.key;
     if(!ev) return;
@@ -694,28 +658,22 @@
   }
 
   function randomSubmissionKey(submissions, rng=Math.random){
-    const entries=Object.keys(submissions||{});
-    if(!entries.length) return null;
-    const rnd = Math.max(0, Math.min(0.999999, typeof rng==='function'?rng():Math.random()));
-    const index = Math.floor(rnd * entries.length);
-    return entries[index] || null;
+    const keys=Object.keys(submissions||{}); if(!keys.length) return null;
+    const r=Math.max(0, Math.min(0.999999, typeof rng==='function'?rng():Math.random()));
+    return keys[Math.floor(r*keys.length)]||null;
   }
 
   async function hostAutoPick(submissionId){
     const state=(await stateRef().get()).val();
     if(!state || state.status!==STATUS.COLLECT) return;
     const submissions=(await submissionsRef().get()).val()||{};
-    let pickId=submissionId;
-    if(!pickId){
-      pickId = randomSubmissionKey(submissions);
-    }
+    const pickId=submissionId || randomSubmissionKey(submissions);
     if(pickId && submissions[pickId]){
       await hostPickWinner(pickId);
     } else {
       await collectWhiteToDiscard(submissions);
       await stateRef().update({ status:STATUS.RESULT, lastWinnerName:'', lastAnswer:'', timerEndsAt:null });
     }
-    updateSelectionUI?.();
     updateActionBar();
   }
 
@@ -751,31 +709,7 @@
     game.submissionsOrder=[];
   }
 
-  function syncPlayersOrder(){
-    const players=game.players||{};
-    const activeIds=orderedPlayerIds(players).filter(id=>players[id].active!==false);
-    const current=Array.isArray(game.playersOrder)?game.playersOrder:[];
-    const merged=[...new Set([...current.filter(id=>activeIds.includes(id)), ...activeIds])];
-    if(JSON.stringify(merged)!==JSON.stringify(current)) orderRef().set(merged);
-  }
-
-  function ensureHostValidity(){
-    const order=activeOrder();
-    const current=game.state.currentHostPid;
-    if(!order.length) return;
-    if(!current || !order.includes(current)){
-      const next=order[0];
-      const name=game.players[next]?.name||'—';
-      if(local.isCreator) stateRef().update({ currentHostPid:next, currentHostName:name });
-    }
-  }
-
-  function maybeAutoStart(){
-    if(!local.isCreator) return;
-    if(game.state.status!==STATUS.LOBBY) return;
-    if(activeOrder().length>=MIN_PLAYERS){ advanceRound(); }
-  }
-
+  // ===== UI render =====
   function buildHandHint(status){
     if(game.state.currentHostPid===local.playerId) return status===STATUS.COLLECT ? 'Вы ведущий — ожидайте ответы и выберите победителя.' : 'Вы управляете ходом игры.';
     if(status===STATUS.LOBBY) return 'Ожидаем старт раунда.';
@@ -800,6 +734,7 @@
     $('#hostSummary').textContent = hostText;
     $('#handHint').textContent = buildHandHint(status);
 
+    // Лобби: видимость "Начать игру"
     const canStart = local.isCreator && status===STATUS.LOBBY;
     const lobbyBlock = $('#lobbyActions');
     const lobbyHint = $('#lobbyHint');
@@ -851,13 +786,8 @@
       }
       container.appendChild(btn);
     });
-    if (disabled){
-      local.selectedIndex = null;
-      local.selectedText = '';
-    } else if (local.selectedIndex !== null && local.selectedIndex >= hand.length){
-      local.selectedIndex = null;
-      local.selectedText = '';
-    }
+    if (disabled){ local.selectedIndex=null; local.selectedText=''; }
+    else if (local.selectedIndex !== null && local.selectedIndex >= hand.length){ local.selectedIndex=null; local.selectedText=''; }
     updateActionBar();
   }
 
@@ -894,6 +824,20 @@
     updateProgressChip();
   }
 
+  // ===== UI handlers & helpers =====
+  function selectCard(idx,text,btn){
+    if(game.state.status!==STATUS.COLLECT || local.hasSubmitted) return;
+    local.selectedIndex=idx;
+    local.selectedText=text;
+    $$('#handCards .answer-card').forEach(el=>el.classList.remove('selected'));
+    if(btn) btn.classList.add('selected');
+    updateHandState();
+    updateActionBar();
+  }
+  function updateHandState(){
+    $('#submittedCard').style.display = local.hasSubmitted && local.submittedText ? 'block':'none';
+    if(local.hasSubmitted && local.submittedText){ $('#submittedText').textContent=local.submittedText; }
+  }
   function updateProgressChip(){
     const chip=$('#progressChip'); if(!chip) return;
     if(game.state.status!==STATUS.COLLECT){ chip.hidden=true; return; }
@@ -903,7 +847,6 @@
     chip.hidden=false;
     chip.classList.toggle('danger', expected>0 && received<expected && game.state.timerEndsAt && game.state.timerEndsAt-now()<15000);
   }
-
   function updateActionBar(){
     const bar=$('#actionBar'); if(!bar) return;
     const isHost=game.state.currentHostPid===local.playerId;
@@ -914,7 +857,6 @@
     else if(local.selectedIndex==null){ $('#actionHint').textContent='Выберите карту из руки, чтобы подтвердить.'; $('#btnConfirm').disabled=true; }
     else { $('#actionHint').textContent='Готово! Подтвердите отправку выбранной карты.'; $('#btnConfirm').disabled=false; }
   }
-
   function startTimerTick(){
     clearInterval(local.timerInterval);
     if(game.state.status!==STATUS.COLLECT || !game.state.timerEndsAt){ $('#timerChip').hidden=true; return; }
@@ -954,35 +896,56 @@
     if(game.state.currentHostPid!==local.playerId){ showError('Следующий раунд запускает ведущий.'); return; }
     await eventsRef().push({ type:'nextRound', t:now() });
   }
-
   async function startGame(){
     if(!local.isCreator){ showError('Стартует ведущий.'); return; }
     await advanceRound();
   }
 
-  function toggleMenu(){ $('#menuSheet').classList.toggle('hidden'); }
-
-  // ===== Setup & UI =====
-  function setupUI(){
-    const params=new URLSearchParams(location.search);
-    const room=params.get('room');
-    const savedName=localStorage.getItem('playerName');
-
-    if(room){
-      local.roomId=room.toUpperCase();
-      local.isCreator=false;
-      showScreen('screenNameOnly');
-      $('#nameOnly').value=savedName||'';
-      setTimeout(()=>{$focus($('#nameOnly'));},0);
-    } else {
-      $('#createRoomId').value=(Math.random().toString(36).slice(2,8)).toUpperCase();
-      if(savedName){ $('#createName').value=savedName; }
-      showScreen('screenCreate');
-    }
+  function copyToClipboard(text){
+    navigator.clipboard.writeText(text).then(()=>toast('Ссылка скопирована')).catch(showError);
   }
 
-  function renderOnStateChange(){ renderState(); renderHand(local.activeHand); updateActionBar(); }
+  // ===== Deck load/draw =====
+  function loadDeckLocal(){
+    let base; const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){ try{ base=JSON.parse(raw); }catch(e){ base=JSON.parse(JSON.stringify(DEMO_DECK)); } }
+    else base=JSON.parse(JSON.stringify(DEMO_DECK));
+    ensureMinimumDeck(base);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
+    game.deck.black=shuffle([...base.black]);
+    game.deck.white=shuffle([...base.white]);
+    game.deck.discardBlack=[];
+    game.deck.discardWhite=[];
+    if($('#deckJson')) $('#deckJson').value=JSON.stringify(base,null,2);
+  }
+  function drawBlack(){ if(!game.deck.black.length){ game.deck.black=shuffle([...game.deck.discardBlack]); game.deck.discardBlack=[]; } return game.deck.black.pop()||'—'; }
+  function drawWhite(){ if(!game.deck.white.length){ game.deck.white=shuffle([...game.deck.discardWhite]); game.deck.discardWhite=[]; } return game.deck.white.pop()||'—'; }
+  function topUpHand(hand,target=7){ const arr=[...(hand||[])]; while(arr.length<target){ arr.push(drawWhite()); } return arr; }
 
+  function syncPlayersOrder(){
+    const players=game.players||{};
+    const activeIds=orderedPlayerIds(players).filter(id=>players[id].active!==false);
+    const current=Array.isArray(game.playersOrder)?game.playersOrder:[];
+    const merged=[...new Set([...current.filter(id=>activeIds.includes(id)), ...activeIds])];
+    if(JSON.stringify(merged)!==JSON.stringify(current)) orderRef().set(merged);
+  }
+  function ensureHostValidity(){
+    const order=activeOrder();
+    const current=game.state.currentHostPid;
+    if(!order.length) return;
+    if(!current || !order.includes(current)){
+      const next=order[0];
+      const name=game.players[next]?.name||'—';
+      if(local.isCreator) stateRef().update({ currentHostPid:next, currentHostName:name });
+    }
+  }
+  function maybeAutoStart(){
+    if(!local.isCreator) return;
+    if(game.state.status!==STATUS.LOBBY) return;
+    if(activeOrder().length>=MIN_PLAYERS){ advanceRound(); }
+  }
+
+  // ===== Wiring =====
   function syncUIHandlers(){
     $('#btnCreateRoom').onclick=createRoom;
     $('#btnNameOnly').onclick=joinRoomWithNameOnly;
@@ -991,12 +954,12 @@
     $('#btnConfirm').onclick=submitCard;
     $('#btnNextRound').onclick=nextRound;
     $('#btnStartGame').onclick=startGame;
-    $('#menuBtn').onclick=toggleMenu;
-    document.addEventListener('click',e=>{ if(!$('#menuSheet').classList.contains('hidden')){ const sheet=$('#menuSheet'); if(e.target.id==='menuBtn' || sheet.contains(e.target)) return; sheet.classList.add('hidden'); } });
+    $('#menuBtn').onclick=()=>$('#menuSheet').classList.toggle('hidden');
+    document.addEventListener('click',e=>{ const sheet=$('#menuSheet'); if(!sheet) return; if(!sheet.classList.contains('hidden') && e.target.id!=='menuBtn' && !sheet.contains(e.target)) sheet.classList.add('hidden'); });
     $('#menuRules').onclick=()=>{ $('#menuSheet').classList.add('hidden'); $('#dlgRules').showModal(); };
     $('#menuDeck').onclick=()=>{ $('#menuSheet').classList.add('hidden'); $('#dlgDeck').showModal(); };
     $('#menuTests').onclick=()=>{ $('#menuSheet').classList.add('hidden'); runTests(); };
-    $('#menuCheck').onclick=async()=>{ $('#menuSheet').classList.add('hidden'); await testDbConnection(); toast('Проверка: '+lastConnMsg); };
+    $('#menuCheck').onclick=async()=>{ $('#menuSheet').classList.add('hidden'); connectivityOk=await testDbConnection(); toast('Проверка: '+lastConnMsg); };
     $('#menuNew').onclick=()=>{ location.href=location.origin+location.pathname; };
     $('#btnSaveDeck').onclick=()=>{ try{ const json=JSON.parse($('#deckJson').value||'{}'); ensureMinimumDeck(json); localStorage.setItem(STORAGE_KEY, JSON.stringify(json)); if(local.isCreator) loadDeckLocal(); toast('Колода сохранена'); }catch(e){ showError('Ошибка JSON: '+e.message); } };
     $('#btnResetDeck').onclick=()=>{ localStorage.removeItem(STORAGE_KEY); loadDeckLocal(); toast('Колода сброшена'); };
@@ -1004,26 +967,28 @@
     $('#btnImportDeck').onclick=()=>{ const input=document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=async()=>{ const file=input.files?.[0]; if(!file) return; const text=await file.text(); $('#deckJson').value=text; }; input.click(); };
   }
 
-  async function handleHostEvent(snap){ /* уже выше */ }
-  function refreshHandSelectionStyles(){} function updateSelectionUI(){} function updateHostHint(){}
+  function renderOnStateChange(){ renderState(); renderHand(local.activeHand); updateActionBar(); }
+
+  // ===== Tests (smoke) =====
+  const tests=[]; const test=(n,f)=>tests.push({n,f});
+  const expect=(c,m)=>{ if(!c) throw new Error(m||'assert failed'); };
+  test('topUpHand() добивает до 7',()=>{ const h=topUpHand(['a'],7); expect(h.length===7,'hand size'); });
+  window.runTests=async()=>{
+    const results=[];
+    for(const t of tests){
+      try{ await t.f(); results.push('✅ '+t.n); }
+      catch(e){ results.push('❌ '+t.n+' — '+e.message); }
+    }
+    $('#testsOutput').textContent=results.join('\n'); $('#dlgTests').showModal();
+  };
 
   // ===== Boot =====
-  let connectivityOk=false;
   document.addEventListener('DOMContentLoaded', async ()=>{
     syncUIHandlers();
     setupUI();
     setTimeout(async()=>{ connectivityOk=await testDbConnection(); },400);
     renderOnStateChange();
   });
-
-  // ===== Tests (UI modal) =====
-  const tests=[]; const test=(n,f)=>tests.push({n,f}); const expect=(c,m)=>{ if(!c) throw new Error(m||'assert failed'); };
-  test('topUpHand() добивает до 7',()=>{ const h=topUpHand(['a'],7); expect(h.length===7,'hand size'); });
-  window.runTests=async()=>{
-    const results=[];
-    for(const t of tests){ try{ await t.f(); results.push('✅ '+t.n); } catch(e){ results.push('❌ '+t.n+' — '+e.message); } }
-    $('#testsOutput').textContent=results.join('\n'); $('#dlgTests').showModal();
-  };
   </script>
 </body>
 </html>
