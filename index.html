@@ -9,7 +9,7 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial;background:linear-gradient(180deg,#0d1016,#0f1219 60%,#0b0e14);color:var(--text)}
     .wrap{max-width:1100px;margin:0 auto;padding:20px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 8px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 8px;flex-wrap:wrap}
     .logo{font-weight:800;letter-spacing:.3px;font-size:20px;display:flex;align-items:center;gap:10px}
     .logo b{display:inline-block;background:linear-gradient(135deg,var(--accent),#b28dff);-webkit-background-clip:text;background-clip:text;color:transparent}
     .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -28,7 +28,14 @@
     .chips{display:flex;gap:8px;flex-wrap:wrap}
     .chip{background:var(--chip);border:1px solid var(--border);padding:8px 10px;border-radius:999px;color:#cfd5e6;font-weight:700}
     .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .card.black-card{background:#050608;border-color:#1f2536;color:#fff}
+    .card.black-card .muted{color:rgba(255,255,255,.65)}
+    .card.selectable{cursor:pointer;transition:.15s ease}
+    .card.selectable:hover{transform:translateY(-2px);}
+    .card.selected{outline:2px solid var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.35);transform:translateY(-3px);}
+    .card.disabled{opacity:.55;pointer-events:none}
+    .card.readonly{pointer-events:none}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
     .kicker{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .small{font-size:12px;opacity:.8}
     .big{font-size:20px;line-height:1.35}
@@ -41,9 +48,9 @@
     .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;background:#1c2233;border:1px solid var(--border);padding:10px 12px;border-radius:12px;box-shadow:var(--shadow)}
     @media (max-width: 600px){
       .wrap{max-width:600px;padding:12px}
-      header{flex-wrap:wrap;gap:8px}
+      header{gap:8px}
       .logo{font-size:18px}
-      .bar{gap:6px}
+      .bar{gap:6px;width:100%;justify-content:flex-start}
       button,.btn{padding:12px 14px;border-radius:14px;font-size:16px}
       .panel{padding:12px;border-radius:16px}
       .cards{grid-template-columns: 1fr}
@@ -59,13 +66,8 @@
       <div class="logo">🃏 <b>500 зл. карт</b> — онлайн</div>
       <div class="bar">
         <span id="connStatus" class="chip" title="Проверка соединения">Статус: не проверено</span>
-        <button class="ghost" id="btnCheck">Проверить соединение</button>
-        <button class="ghost" id="btnDeck">Колода</button>
-        <button class="ghost" id="btnHow">Правила</button>
-        <button class="ghost" id="btnTests">🧪 Тесты</button>
         <button id="btnNew">Новая игра</button>
-        <button class="ghost hidden" id="btnStart">Старт игры (ведущий)</button>
-        <button class="ghost hidden" id="btnToJudge">→ Фаза судьи</button>
+        <button class="ghost" id="btnMenu">Меню</button>
       </div>
     </header>
 
@@ -100,29 +102,36 @@
           <div>
             <div class="muted small">Комната: <span id="roomIdLabel">—</span></div>
             <div class="muted small">Раунд <span id="roundN">1</span>/<span id="roundTotal">10</span></div>
-            <div style="margin-top:2px;">Судья: <b id="judgeName">—</b></div>
+            <div style="margin-top:2px;">Ведущий: <b id="hostName">—</b></div>
           </div>
-          <div class="chips"><span class="chip" id="turnHint">Фаза: —</span></div>
+          <div class="chips"><span class="chip" id="statusHint">Статус: —</span></div>
         </div>
 
-        <div class="card" style="margin-top:12px;">
+        <div class="card black-card" style="margin-top:12px;">
           <div class="muted small">Чёрная карта</div>
           <div id="blackText" class="big" style="margin-top:6px;">—</div>
         </div>
 
-        <div id="phaseHands" style="margin-top:14px;">
+        <div id="handSection" style="margin-top:14px;">
           <h3>Ваши карты</h3>
-          <div class="muted small">Выберите одну белую карту (ваша рука видна только вам)</div>
+          <div class="muted small" id="selectionHint">Выберите одну белую карту (ваша рука видна только вам)</div>
           <div class="cards" id="handCards" style="margin-top:10px;"></div>
+          <div class="row" id="handActions" style="margin-top:10px;">
+            <button class="ghost" id="btnConfirm" disabled>Подтвердить выбор</button>
+          </div>
+          <div class="card hidden" id="submittedCard" style="margin-top:12px;">
+            <div class="muted small">Вы положили на стол</div>
+            <div class="big" id="submittedCardText" style="margin-top:6px;">—</div>
+          </div>
         </div>
 
-        <div id="phaseJudge" class="hidden" style="margin-top:14px;">
-          <h3>Выбор победителя (судья)</h3>
-          <div class="muted small">Судья <b id="judgeName2">—</b>, выберите лучший ответ:</div>
+        <div id="hostPanel" style="margin-top:14px;">
+          <h3>Ответы на столе</h3>
+          <div class="muted small" id="hostHint">Ждём, пока игроки выберут карты</div>
           <div class="cards" id="submissions" style="margin-top:10px;"></div>
         </div>
 
-        <div id="phaseWinner" class="hidden" style="margin-top:14px;">
+        <div id="resultPanel" class="hidden" style="margin-top:14px;">
           <div class="card winner">
             <div class="muted small">Победитель раунда</div>
             <div class="big" id="winnerLine" style="margin-top:6px;">—</div>
@@ -144,14 +153,27 @@
     </div>
 
     <!-- МОДАЛКИ -->
+    <dialog id="dlgMenu">
+      <form method="dialog" class="card" style="min-width:min(360px,90vw);">
+        <h2>Меню</h2>
+        <div class="row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:8px;">
+          <button type="button" id="menuCheck">Проверить соединение</button>
+          <button type="button" id="menuDeck" class="ghost">Колода</button>
+          <button type="button" id="menuRules" class="ghost">Правила</button>
+        </div>
+        <menu class="row" style="justify-content:flex-end; margin-top:12px;">
+          <button class="ghost">Закрыть</button>
+        </menu>
+      </form>
+    </dialog>
+
     <dialog id="dlgRules">
       <form method="dialog" class="card" style="min-width:min(680px,90vw);">
         <h2>Правила (коротко)</h2>
         <ol class="muted" style="line-height:1.6;">
           <li>Один создаёт комнату и становится ведущим (host).</li>
           <li>Все вводят имя и заходят по ссылке комнаты.</li>
-          <li>Каждый раунд судья меняется по кругу.</li>
-          <li>Игроки выбирают ответы из своей руки, судья выбирает лучший.</li>
+          <li>Игроки выбирают ответы из своей руки, ведущий выбирает лучший.</li>
           <li>Победитель получает 1 очко.</li>
         </ol>
         <menu class="row" style="justify-content:flex-end; margin-top:8px;">
@@ -179,15 +201,6 @@
       </form>
     </dialog>
 
-    <dialog id="dlgTests">
-      <form method="dialog" class="card" style="min-width:min(780px,96vw);">
-        <h2>Результаты тестов</h2>
-        <div id="testsOutput" class="mono small" style="white-space:pre-wrap"></div>
-        <menu class="row" style="justify-content:flex-end; margin-top:8px;">
-          <button class="ghost">Закрыть</button>
-        </menu>
-      </form>
-    </dialog>
   </div>
 
   <div id="toast" class="toast hidden"></div>
@@ -276,11 +289,12 @@
 
   // ===== ЛОГИКА КОМНАТЫ / СОСТОЯНИЕ =====
   const STORAGE_KEY = 'zlobnye_karty_deck_v1';
-  const local = { playerId: localStorage.getItem('playerId') || uid(), name:'', roomId:null, isHost:false };
+  const local = { playerId: localStorage.getItem('playerId') || uid(), name:'', roomId:null, isHost:false, hostId:null, currentRound:0, hasSubmitted:false, selectedCardIndex:null, selectedCardText:'', submittedCardText:'' };
   localStorage.setItem('playerId', local.playerId);
 
-  const game = { state: { round:0, roundsTotal:10, judgeIndex:0, phase:'lobby', blackCard:'', sfwOnly:true },
-                 deck: { black:[], white:[], discardBlack:[], discardWhite:[] } };
+  const game = { state: { round:0, roundsTotal:10, status:'lobby', blackCard:'', sfwOnly:true, hostName:'', hostId:null },
+                 deck: { black:[], white:[], discardBlack:[], discardWhite:[] },
+                 submissions: {}, submissionsOrder: [] };
 
   function fillBlack(black, white){
     return black.includes('____') ? black.replace('____', `<b>${escapeHtml(white)}</b>`) : `${black} — <b>${escapeHtml(white)}</b>`;
@@ -311,8 +325,10 @@
   // Хелпер: синхронизируем роль хоста при любых перезаходах
   function watchHost(){
     roomRef().child('hostId').on('value', snap => {
+      const hostId = snap.val();
+      local.hostId = hostId;
       const was = local.isHost;
-      local.isHost = (snap.val() === local.playerId);
+      local.isHost = (hostId === local.playerId);
       if (local.isHost !== was) renderState();
     });
   }
@@ -325,7 +341,7 @@
     loadDeckLocal();
     try{
       await roomRef().set({ hostId: local.playerId, createdAt: Date.now() });
-      await stateRef().set({ ...game.state, phase:'lobby', sfwOnly: $('#sfwOnly').checked });
+      await stateRef().set({ ...game.state, status:'lobby', sfwOnly: $('#sfwOnly').checked });
       await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white });
       updateShareLink();
       subscribeRoom();
@@ -352,17 +368,9 @@
     if (!db || !local.roomId) return;
     stateRef().off(); playersRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off();
     stateRef().on('value', snap=>{ const s=snap.val(); if(!s) return; game.state = s; renderState(); });
-    playersRef().on('value', snap=>{ const players = snap.val()||{}; playersCount = Object.keys(players).length; renderPlayers(players); maybeAutoStart(players); updateHostButtons(); });
+    playersRef().on('value', snap=>{ const players = snap.val()||{}; playersCount = Object.keys(players).length; renderPlayers(players); maybeAutoStart(players); });
     submissionsRef().on('value', snap=>{ renderSubmissions(snap.val()||{}); });
     perPlayerRef(local.playerId).on('value', snap=>{ renderHand((snap.val()&&snap.val().hand)||[]); });
-  }
-
-  function updateHostButtons(){
-    const startBtn = $('#btnStart');
-    if (startBtn){
-      startBtn.disabled = playersCount < 2;
-      startBtn.title = playersCount < 2 ? 'Нужно минимум 2 игрока' : '';
-    }
   }
 
   async function registerPlayer(){
@@ -371,7 +379,7 @@
     if (!local.name) { local.name = 'Игрок ' + local.playerId.slice(-4); }
     localStorage.setItem('playerName', local.name);
     const pRef = playersRef().child(local.playerId);
-    await pRef.set({ name: local.name, score:0, isJudge:false, joinedAt: Date.now() });
+    await pRef.set({ name: local.name, score:0, joinedAt: Date.now() });
     await pRef.onDisconnect().remove();
     // выдать руку (ведущий)
     if (local.isHost){
@@ -397,25 +405,42 @@
   }
 
   // ===== ЛОББИ/ИГРА ПЕРЕКЛЮЧЕНИЕ =====
+  function resetPlayerRoundState(round){
+    local.currentRound = round || 0;
+    local.hasSubmitted = false;
+    local.selectedCardIndex = null;
+    local.selectedCardText = '';
+    local.submittedCardText = '';
+  }
+
   function renderState(){
     const s = game.state || {};
-    if (s.phase==='lobby'){ $('#screenLobby').classList.remove('hidden'); $('#screenGame').classList.add('hidden'); }
+    const status = s.status || 'lobby';
+    if (status==='lobby'){ $('#screenLobby').classList.remove('hidden'); $('#screenGame').classList.add('hidden'); }
     else { $('#screenLobby').classList.add('hidden'); $('#screenGame').classList.remove('hidden'); }
+    if (status==='lobby'){ resetPlayerRoundState(0); }
+    if (status==='collect' && (s.round||0) !== local.currentRound){
+      resetPlayerRoundState(s.round||0);
+    }
     $('#roomIdLabel').textContent = local.roomId || '—';
     $('#roundN').textContent = s.round || 0; $('#roundTotal').textContent = s.roundsTotal || 10;
-    $('#judgeName').textContent = s.judgeName || '—'; $('#judgeName2').textContent = s.judgeName || '—';
+    $('#hostName').textContent = s.hostName || '—';
     $('#blackText').innerHTML = escapeHtml(s.blackCard || '—');
-    $('#turnHint').textContent = 'Фаза: ' + (s.phase||'—');
-    // Фазы видимости
-    $('#phaseHands').classList.toggle('hidden', s.phase!=='hands');
-    $('#phaseJudge').classList.toggle('hidden', s.phase!=='judge');
-    $('#phaseWinner').classList.toggle('hidden', s.phase!=='winner');
-    // Кнопки ведущего
-    const showStart = local.isHost && s.phase==='lobby';
-    const showToJudge = local.isHost && s.phase==='hands';
-    $('#btnStart')?.classList.toggle('hidden', !showStart);
-    $('#btnToJudge')?.classList.toggle('hidden', !showToJudge);
-    updateHostButtons();
+    const statusMap = { lobby:'ожидание игроков', collect:'сбор ответов', result:'результат раунда' };
+    $('#statusHint').textContent = 'Статус: ' + (statusMap[status] || '—');
+    $('#handSection').classList.toggle('hidden', status==='lobby');
+    $('#hostPanel').classList.toggle('hidden', status==='lobby');
+    const isResult = status==='result';
+    $('#resultPanel').classList.toggle('hidden', !isResult);
+    if (isResult){
+      const winnerName = s.lastWinnerName || '—';
+      const answer = s.lastAnswer || '';
+      $('#winnerLine').innerHTML = `${escapeHtml(winnerName)} получает очко за: ${fillBlack(s.blackCard||'', answer)}`;
+    }
+    updateSelectionUI();
+    updateHostHint();
+    renderSubmissions(game.submissions);
+    $('#nextRound').classList.toggle('hidden', !local.isHost);
   }
 
   function renderPlayers(players){
@@ -423,46 +448,199 @@
     const arr=Object.entries(players).map(([id,p])=>({id,...p})).sort((a,b)=> (b.score||0)-(a.score||0));
     arr.forEach(p=>{
       const row=document.createElement('div'); row.className='kicker'; row.style.padding='6px 0';
-      row.innerHTML=`<div>${escapeHtml(p.name)} ${p.isJudge?'<span class="small muted">(судья)</span>':''}</div><div class="chip">${p.score||0}</div>`;
+      const isHost = p.id === (local.hostId || game.state.hostId);
+      row.innerHTML=`<div>${escapeHtml(p.name)} ${isHost?'<span class="small muted">(ведущий)</span>':''}</div><div class="chip">${p.score||0}</div>`;
       box.appendChild(row);
+    });
+  }
+
+  function orderedPlayerIds(players){
+    return Object.keys(players||{}).sort((a,b)=>{
+      const ja = players[a]?.joinedAt || 0;
+      const jb = players[b]?.joinedAt || 0;
+      if (ja !== jb) return ja - jb;
+      return a.localeCompare(b);
     });
   }
 
   function renderHand(hand){
     const box=$('#handCards'); box.innerHTML='';
+    const disabled = local.hasSubmitted || (game.state.status!=='collect');
     hand.forEach((txt,i)=>{
-      const btn=document.createElement('button'); btn.className='card'; btn.style.textAlign='left'; btn.textContent=txt;
-      btn.onclick=()=> submitCard(txt, i);
+      const btn=document.createElement('button'); btn.className='card'; btn.dataset.index=i; btn.style.textAlign='left';
+      btn.innerHTML = `<div class="big">${escapeHtml(txt)}</div>`;
+      if (disabled){
+        btn.disabled = true;
+        btn.classList.add('disabled');
+      } else {
+        btn.disabled = false;
+        btn.classList.add('selectable');
+        btn.onclick=()=> selectCard(i, txt);
+      }
       box.appendChild(btn);
+    });
+    if (disabled){
+      local.selectedCardIndex = null;
+      local.selectedCardText = '';
+    } else if (local.selectedCardIndex !== null && local.selectedCardIndex >= hand.length){
+      local.selectedCardIndex = null;
+      local.selectedCardText = '';
+    }
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+  }
+
+  function selectCard(idx, text){
+    if (local.hasSubmitted) return;
+    if ((game.state.status||'')!=='collect') return;
+    local.selectedCardIndex = idx;
+    local.selectedCardText = text;
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+  }
+
+  function refreshHandSelectionStyles(){
+    const status = game.state.status || 'lobby';
+    const canPick = status==='collect' && !local.hasSubmitted;
+    $$('#handCards .card').forEach(el=>{
+      const idx = Number(el.dataset.index);
+      const isSelected = idx === local.selectedCardIndex && canPick;
+      el.classList.toggle('selected', isSelected);
+      el.classList.toggle('disabled', !canPick);
+      if (canPick) el.classList.add('selectable'); else el.classList.remove('selectable');
+      if (el instanceof HTMLButtonElement){ el.disabled = !canPick; }
     });
   }
 
-  async function submitCard(text, idx){
-    const s= (await stateRef().get()).val(); if (!s || s.phase!=='hands') { toast('Ждём фазу выбора'); return; }
-    // убрать карту из руки
-    const handSnap = await perPlayerRef(local.playerId).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; hand.splice(idx,1);
+  function updateSelectionUI(){
+    const hint = $('#selectionHint');
+    const btn = $('#btnConfirm');
+    const submittedBox = $('#submittedCard');
+    const status = game.state.status || 'lobby';
+    if (hint){
+      if (status==='collect'){
+        if (local.hasSubmitted){
+          hint.textContent = 'Выбор сделан, ждём ведущего.';
+        } else if (local.selectedCardIndex === null){
+          hint.textContent = 'Выберите одну белую карту (ваша рука видна только вам).';
+        } else {
+          hint.textContent = 'Нажмите «Подтвердить выбор», чтобы отправить карту.';
+        }
+      } else if (status==='result'){
+        hint.textContent = 'Раунд завершён, ожидаем следующую раздачу.';
+      } else {
+        hint.textContent = 'Ожидаем начало раунда.';
+      }
+    }
+    if (btn){
+      const canConfirm = !local.hasSubmitted && status==='collect' && local.selectedCardIndex !== null;
+      btn.disabled = !canConfirm;
+      btn.classList.toggle('hidden', status!=='collect' || local.hasSubmitted);
+    }
+    if (submittedBox){
+      submittedBox.classList.toggle('hidden', !local.hasSubmitted);
+      if (local.hasSubmitted){
+        $('#submittedCardText').textContent = local.submittedCardText || '—';
+      }
+    }
+  }
+
+  async function submitCard(text){
+    const status = (game.state && game.state.status) || 'lobby';
+    if (status!=='collect'){ toast('Сейчас нельзя отправить карту'); return; }
+    const handSnap = await perPlayerRef(local.playerId).get();
+    let hand=(handSnap.val()&&handSnap.val().hand)||[];
+    let idx = local.selectedCardIndex;
+    if (idx==null || hand[idx] !== text){ idx = hand.indexOf(text); }
+    if (idx<0){ toast('Карта уже разыграна'); return; }
+    hand.splice(idx,1);
     await perPlayerRef(local.playerId).set({ hand });
-    // добавить в submissions
     const id = uid(); await submissionsRef().child(id).set({ playerId: local.playerId, text, t:Date.now() });
+    local.hasSubmitted = true;
+    local.submittedCardText = text;
+    local.selectedCardIndex = null;
+    local.selectedCardText = '';
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+    updateHostHint();
     toast('Ответ отправлен');
   }
 
+  function updateHostHint(){
+    const hostHint = $('#hostHint');
+    if (!hostHint) return;
+    const status = game.state.status || 'lobby';
+    const submissionsCount = Object.keys(game.submissions||{}).length;
+    if (status==='lobby'){
+      hostHint.textContent = 'Ждём игроков.';
+      return;
+    }
+    if (status==='collect'){
+      if (local.isHost){
+        hostHint.textContent = submissionsCount ? 'Можно выбрать лучший ответ.' : 'Ждём, пока игроки выберут карты.';
+      } else {
+        hostHint.textContent = local.hasSubmitted ? 'Ждём остальных игроков и решение ведущего.' : 'Сделайте выбор и подтвердите карту.';
+      }
+    } else if (status==='result'){
+      hostHint.textContent = local.isHost ? 'Нажмите «Следующий раунд», чтобы продолжить.' : 'Ведущий решает, когда перейти к следующему раунду.';
+    } else {
+      hostHint.textContent = 'Ждём ведущего.';
+    }
+  }
+
   function renderSubmissions(map){
+    game.submissions = map || {};
     const box=$('#submissions'); box.innerHTML='';
-    const items = shuffle(Object.entries(map||{}).map(([id,s])=>({id,...s})));
+    const entries = Object.entries(game.submissions);
+    if (!entries.length){
+      game.submissionsOrder = [];
+      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent='Пока нет сыгранных карт.';
+      box.appendChild(empty);
+      updateHostHint();
+      return;
+    }
+    const keys = entries.map(([id])=>id);
+    const orderCurrent = Array.isArray(game.submissionsOrder) ? game.submissionsOrder.filter(id=>game.submissions[id]) : [];
+    let order = orderCurrent;
+    const sameSize = order.length === keys.length;
+    const sameSet = sameSize && order.every(id=> game.submissions[id]);
+    if (!sameSet){
+      order = shuffle([...keys]);
+      game.submissionsOrder = order.slice();
+    }
+    const items = order.map(id=>({ id, ...(game.submissions[id]||{}) })).filter(s=> typeof s.text === 'string');
+    if (!items.length){
+      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent='Пока нет сыгранных карт.';
+      box.appendChild(empty);
+      updateHostHint();
+      return;
+    }
+    const reveal = local.isHost || (game.state.status==='result');
+    if (!reveal){
+      const wait=document.createElement('div'); wait.className='muted small'; wait.textContent='Ответы скрыты до выбора ведущего.';
+      box.appendChild(wait);
+      updateHostHint();
+      return;
+    }
     items.forEach(s=>{
       const b=document.createElement('button'); b.className='card'; b.style.textAlign='left';
       b.innerHTML=`<div class="muted small">Ответ</div><div class="big">${fillBlack(game.state.blackCard||'', s.text)}</div>`;
-      b.onclick=()=> local.isHost && game.state.phase==='judge' ? pickWinner(s.playerId, s.text) : null;
+      if (local.isHost && game.state.status==='collect'){
+        b.onclick=()=> pickWinner(s.playerId, s.text);
+      } else {
+        b.classList.add('readonly');
+        b.setAttribute('tabindex','-1');
+      }
       box.appendChild(b);
     });
+    updateHostHint();
   }
 
   // ===== Ведущий: старт/раунды/победитель =====
   function maybeAutoStart(players){
     try{
       if (!local.isHost) return;
-      if ((game.state && game.state.phase)!=='lobby') return;
+      if ((game.state && game.state.status)!=='lobby') return;
       const count = Object.keys(players||{}).length;
       if (count >= 2) { startGameHost(); }
     } catch(e){ console.warn('autoStart skipped', e); }
@@ -471,69 +649,61 @@
   async function startGameHost(){
     if (!local.isHost) return toast('Только ведущий может стартовать');
     if (playersCount < 2) return toast('Нужно минимум 2 игрока');
-    // подготовка: назначить судью 0, выдать карты всем, чёрную карту
-    game.state.round=1; game.state.phase='hands'; game.state.roundsTotal=10; game.state.judgeIndex=0;
-    const playersSnap = await playersRef().get(); const players = playersSnap.val()||{}; const ids = Object.keys(players);
+    game.state.round=1; game.state.status='collect'; game.state.roundsTotal=10;
+    const playersSnap = await playersRef().get(); const players = playersSnap.val()||{}; const ids = orderedPlayerIds(players);
     // руки уже выданы при регистрации; убедимся, что у всех по 7
     for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
-    const judgeId = ids[0] || null; const judgeName = judgeId ? players[judgeId].name : '—';
     const black = drawBlack();
-    await stateRef().set({ ...game.state, judgeId, judgeName, blackCard:black, sfwOnly: $('#sfwOnly').checked });
+    const hostId = local.playerId;
+    const hostName = players[hostId]?.name || local.name || '—';
+    await stateRef().set({ round:1, roundsTotal:game.state.roundsTotal, status:'collect', hostId, hostName, blackCard:black, lastWinnerName:'', lastAnswer:'', sfwOnly: $('#sfwOnly').checked });
     await submissionsRef().remove();
+    game.submissions = {};
+    game.submissionsOrder = [];
+    renderSubmissions(game.submissions);
     await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white, discardBlack: game.deck.discardBlack, discardWhite: game.deck.discardWhite });
+    resetPlayerRoundState(1);
+    updateSelectionUI();
   }
-
-  async function toJudgePhaseHost(){ if(!local.isHost) return; await stateRef().update({ phase:'judge' }); }
 
   async function pickWinner(playerId, answer){
     if (!local.isHost) return;
     // +1 очко игроку
     const pRef = playersRef().child(playerId); const pSnap = await pRef.get(); const p=pSnap.val()||{}; await pRef.update({ score:(p.score||0)+1 });
-    await stateRef().update({ phase:'winner', lastWinnerName: p.name, lastAnswer: answer });
-    $('#winnerLine').innerHTML = `${escapeHtml(p.name||'—')} получает очко за: ${fillBlack(game.state.blackCard||'', answer)}`;
+    await stateRef().update({ status:'result', lastWinnerName: p.name, lastAnswer: answer });
+    toast(`Победитель: ${p.name||'—'}`);
   }
 
   async function nextRoundHost(){
     if (!local.isHost) return; const sSnap = await stateRef().get(); const s = sSnap.val(); if (!s) return;
     if (s.round >= s.roundsTotal) { toast('Игра окончена'); return; }
-    const players = (await playersRef().get()).val()||{}; const ids = Object.keys(players);
-    const judgeIdx = (ids.indexOf(s.judgeId)+1) % ids.length; const judgeId = ids[judgeIdx]; const judgeName = players[judgeId].name;
-    // новая чёрная, очистить submissions, добрать по 1 карте всем
+    const players = (await playersRef().get()).val()||{}; const ids = orderedPlayerIds(players);
     for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
     await submissionsRef().remove();
+    game.submissions = {};
+    game.submissionsOrder = [];
+    renderSubmissions(game.submissions);
     const black = drawBlack();
-    await stateRef().set({ ...s, round: s.round+1, judgeId, judgeName, blackCard:black, phase:'hands' });
+    await stateRef().set({ ...s, round: s.round+1, status:'collect', blackCard:black, lastWinnerName:'', lastAnswer:'' });
+    resetPlayerRoundState((s.round||0)+1);
+    updateSelectionUI();
   }
 
-  // ===== Тесты (локальные для чистых функций) =====
-  const tests=[]; function test(name,fn){tests.push({name,fn});} function expect(cond,msg){ if(!cond) throw new Error(msg||'assert failed'); }
-  async function runTests(){
-    const out=[]; for(const t of tests){ try{ await t.fn(); out.push({name:t.name,ok:true}); }catch(e){ out.push({name:t.name,ok:false,err:e.message}); } }
-    const lines = out.map(r=> `${r.ok?'✅':'❌'} ${r.name}${r.ok?'':` — ${r.err}`}`).join('\n'); $('#testsOutput').textContent=lines||'Нет тестов'; $('#dlgTests').showModal(); console.table(out);
-  }
-  // существующие тесты (не меняем)
-  test('ensureMinimumDeck(): >=120/500',()=>{ const base={black:[],white:[]}; ensureMinimumDeck(base); expect(base.black.length>=120,'black<120'); expect(base.white.length>=500,'white<500'); });
-  test('fillBlack() placeholder',()=>{ const s=fillBlack('A ____ B','X'); expect(/<b>X<\/b>/.test(s),'no replace'); });
-  // новые юнит-тесты
-  test('fillBlack() no placeholder path',()=>{ const s=fillBlack('Привет','мир'); expect(/Привет\s—\s<b>мир<\/b>/.test(s),'no dash concat'); });
-  test('escapeHtml() double quote',()=>{ const s=escapeHtml('"'); expect(s==='&quot;','not &quot;'); });
-  test('escapeHtml() complex',()=>{ const s=escapeHtml('<tag> & "\'"'); expect(s.includes('&lt;tag&gt;') && s.includes('&amp;') && s.includes('&quot;') && s.includes('&#39;'),'escape failed'); });
-  test('ensureMinimumDeck() idempotent-ish',()=>{ const base={black:["Q"],white:["W"]}; ensureMinimumDeck(base); const b1=base.black.length,w1=base.white.length; ensureMinimumDeck(base); expect(base.black.length>=b1 && base.white.length>=w1,'not growing to min'); });
-  
   // ===== Обработчики =====
-  $('#btnHow').onclick=()=> $('#dlgRules').showModal();
-  $('#btnDeck').onclick=()=> $('#dlgDeck').showModal();
+  function closeMenu(){ const dlg = $('#dlgMenu'); if (dlg && typeof dlg.close==='function' && dlg.open) dlg.close(); }
+  $('#btnMenu').onclick=()=> $('#dlgMenu').showModal();
+  $('#menuRules').onclick=()=>{ closeMenu(); $('#dlgRules').showModal(); };
+  $('#menuDeck').onclick=()=>{ closeMenu(); $('#dlgDeck').showModal(); };
+  $('#menuCheck').onclick=async()=>{ closeMenu(); await testDbConnection(); toast('Проверка: '+ lastConnMsg); };
   $('#btnSaveDeck').onclick=()=>{ try{ const j=JSON.parse($('#deckJson').value); localStorage.setItem(STORAGE_KEY, JSON.stringify(j)); toast('Колода сохранена'); if(local.isHost) loadDeckLocal(); }catch(e){ alert('Ошибка JSON: '+e.message);} };
   $('#btnResetDeck').onclick=()=>{ localStorage.removeItem(STORAGE_KEY); if(local.isHost) loadDeckLocal(); $('#deckJson').value=JSON.stringify(DEMO_DECK,null,2); toast('Сбросили к демо'); };
   $('#btnExport').onclick=()=>{ const blob=new Blob([$('#deckJson').value],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='deck.json'; a.click(); };
   $('#btnImport').onclick=async()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; $('#deckJson').value=await f.text(); }; inp.click(); };
-  $('#btnTests').onclick=runTests;
   $('#btnNew').onclick=()=> location.href = location.origin + location.pathname;
   $('#btnCreate').onclick=async()=>{ await createRoom(); };
   $('#btnJoin').onclick=async()=>{ const id=($('#roomInput').value||'').trim(); if(!id) return toast('Введите ID комнаты'); await joinRoom(id); };
   $('#btnCopy').onclick=()=>{ navigator.clipboard.writeText($('#shareLink').value); toast('Ссылка скопирована'); };
-  $('#btnStart').onclick = startGameHost;
-  $('#btnToJudge').onclick = toJudgePhaseHost;
+  $('#btnConfirm').onclick=()=>{ if (local.hasSubmitted) return; if (!local.selectedCardText){ toast('Сначала выберите карту'); return; } submitCard(local.selectedCardText); };
   $('#nextRound').onclick=nextRoundHost;
 
   function updateShareLink(){
@@ -554,7 +724,6 @@
     if (firebaseInitError){ updateConnStatus(false, 'Ошибка инициализации: '+firebaseInitError.message); }
   }
   function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: ' + (ok?'подключено':'ошибка'); el.title=msg||''; el.style.background= ok ? 'var(--accent-2)' : 'var(--chip)'; }
-  $('#btnCheck').onclick = async ()=>{ await testDbConnection(); toast('Проверка: '+ lastConnMsg); };
   init(); autoJoinFromURL(); setTimeout(()=>testDbConnection(), 300);
   </script>
 </body>
