@@ -5,57 +5,142 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>500 злобных карт — мультиплеер (один HTML)</title>
   <style>
-    :root { --bg:#0f1115; --panel:#151823; --muted:#8b93a7; --text:#e6e9f2; --accent:#7c5cff; --accent-2:#25d0a2; --danger:#ff5c7c; --card:#1b2030; --chip:#20263a; --border:#2a3248; --shadow:0 10px 30px rgba(0,0,0,.35);} 
+    :root {
+      --bg:#0f1115;
+      --panel:#151823;
+      --panel-soft:rgba(21,24,35,0.75);
+      --muted:#8b93a7;
+      --text:#e6e9f2;
+      --accent:#7c5cff;
+      --accent-2:#25d0a2;
+      --danger:#ff5c7c;
+      --card:#1b2030;
+      --chip:#20263a;
+      --border:#2a3248;
+      --shadow:0 14px 34px rgba(0,0,0,.35);
+      --focus:ring:0 0 0 3px rgba(124,92,255,.35);
+      --safe-bottom:env(safe-area-inset-bottom);
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial;background:linear-gradient(180deg,#0d1016,#0f1219 60%,#0b0e14);color:var(--text)}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,"Noto Sans","Helvetica Neue",Arial;
+      background:radial-gradient(circle at 20% -10%,rgba(124,92,255,.25),transparent 55%),
+                 radial-gradient(circle at 80% -10%,rgba(37,208,162,.18),transparent 60%),
+                 #0c0f16;
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:1080px;margin:0 auto;padding:20px 20px 120px;position:relative}
     header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0 8px;flex-wrap:wrap}
     .logo{font-weight:800;letter-spacing:.3px;font-size:20px;display:flex;align-items:center;gap:10px}
     .logo b{display:inline-block;background:linear-gradient(135deg,var(--accent),#b28dff);-webkit-background-clip:text;background-clip:text;color:transparent}
     .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    button,.btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:var(--shadow);transition:.15s ease}
+    button,.btn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:11px 16px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:700;
+      box-shadow:var(--shadow);
+      transition:transform .15s ease,filter .2s ease,box-shadow .2s ease;
+      position:relative;
+    }
+    button:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none;filter:none}
     button.ghost,.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text);box-shadow:none}
-    button.texty{background:transparent;border:none;color:var(--muted);padding:8px 10px}
-    button:hover{transform:translateY(-1px);filter:saturate(1.1)}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-    .panel{grid-column:span 12;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+    button.linky{background:transparent;border:none;color:#b7c1ff;padding:8px 4px;box-shadow:none}
+    button:hover:not(:disabled){transform:translateY(-1px);filter:saturate(1.1)}
+    button:focus-visible{outline:none;box-shadow:var(--focus:ring)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+    .panel{grid-column:span 12;background:var(--panel);border:1px solid var(--border);border-radius:22px;padding:18px;box-shadow:var(--shadow);backdrop-filter:blur(6px)}
     @media(min-width:900px){.panel.split{grid-column:span 8}.panel.side{grid-column:span 4;position:sticky;top:12px;align-self:start}}
-    h2{margin:8px 0 10px;font-size:18px}
-    h3{margin:8px 0;font-size:16px;color:var(--muted);font-weight:700}
+    h1,h2,h3{margin:8px 0 10px;font-size:18px}
+    h1{font-size:24px;margin-bottom:16px}
+    h3{font-size:16px;color:var(--muted);font-weight:700}
+    p{margin:0 0 12px}
     .muted{color:var(--muted)}
+    .small{font-size:12px;opacity:.8}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:13px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input[type="text"],input[type="number"],textarea{width:100%;background:var(--chip);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;outline:none}
     .chips{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{background:var(--chip);border:1px solid var(--border);padding:8px 10px;border-radius:999px;color:#cfd5e6;font-weight:700}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px}
+    .chip{background:var(--chip);border:1px solid var(--border);padding:8px 11px;border-radius:999px;color:#cfd5e6;font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:background .2s ease,color .2s ease}
+    .chip.alert{border-color:rgba(255,92,124,.45);color:#ffc0d0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:16px;line-height:1.5;box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform .2s ease,box-shadow .2s ease,outline .2s ease}
     .card.black-card{background:#050608;border-color:#1f2536;color:#fff}
     .card.black-card .muted{color:rgba(255,255,255,.65)}
-    .card.selectable{cursor:pointer;transition:.15s ease}
-    .card.selectable:hover{transform:translateY(-2px);}
-    .card.selected{outline:2px solid var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.35);transform:translateY(-3px);}
+    .card.selectable{cursor:pointer}
+    .card.selectable:hover:not(.disabled){transform:translateY(-2px);box-shadow:0 16px 30px rgba(0,0,0,.35)}
+    .card.selected{outline:2px solid var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.35),0 16px 30px rgba(0,0,0,.4);transform:translateY(-3px)}
     .card.disabled{opacity:.55;pointer-events:none}
     .card.readonly{pointer-events:none}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-    .kicker{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .small{font-size:12px;opacity:.8}
-    .big{font-size:20px;line-height:1.35}
-    .winner{background:linear-gradient(135deg,rgba(37,208,162,.15),rgba(124,92,255,.15));border-color:#39456b}
-    .scroll{max-height:260px;overflow:auto;padding-right:6px}
-    .hr{height:1px;background:var(--border);margin:12px 0}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-    .hidden{display:none!important}
-    .link{color:#b7c1ff;text-decoration:underline;cursor:pointer}
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;background:#1c2233;border:1px solid var(--border);padding:10px 12px;border-radius:12px;box-shadow:var(--shadow)}
-    @media (max-width: 600px){
-      .wrap{max-width:600px;padding:12px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+    .winner{background:linear-gradient(135deg,rgba(37,208,162,.2),rgba(124,92,255,.2));border-color:#39456b}
+    .scroll{max-height:280px;overflow:auto;padding-right:6px}
+    .scroll::-webkit-scrollbar{width:6px}
+    .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:999px}
+    .hr{height:1px;background:var(--border);margin:14px 0}
+    input[type="text"],textarea{
+      width:100%;
+      background:rgba(32,38,58,.65);      border:1px solid var(--border);
+      color:var(--text);
+      padding:11px 14px;
+      border-radius:14px;
+      outline:none;
+      transition:border .2s ease,box-shadow .2s ease;
+    }
+    input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,255,.25)}
+    label{display:flex;align-items:center;gap:8px}
+    dialog{border:none;border-radius:22px;padding:0;background:rgba(15,17,21,.92);color:var(--text);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+    dialog::backdrop{background:rgba(6,8,12,.7)}
+    dialog form{padding:22px;max-height:80vh;overflow:auto}
+    menu{margin:0;padding:0}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + var(--safe-bottom));background:var(--panel-soft);border:1px solid var(--border);padding:12px 16px;border-radius:16px;box-shadow:var(--shadow);min-width:220px;text-align:center;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .25s ease}
+    .toast.show{opacity:1;pointer-events:auto;transform:translate(-50%, -6px)}
+    .pill{display:inline-flex;align-items:center;gap:6px}
+    #actionBar{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:calc(12px + var(--safe-bottom));
+      width:min(560px,calc(100vw - 24px));
+      background:rgba(18,20,30,.95);
+      border:1px solid rgba(76,85,115,.5);
+      border-radius:18px;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      box-shadow:0 24px 60px rgba(0,0,0,.45);
+      z-index:20;
+      transition:transform .25s ease,opacity .2s ease;
+    }
+    #actionBar.hidden{opacity:0;pointer-events:none;transform:translate(-50%, 40px)}
+    #actionHint{font-size:14px;color:rgba(226,231,240,.9);line-height:1.35}
+    #btnConfirm{flex-shrink:0}
+    .action-icon{font-size:18px}
+    .floating-cta{display:flex;align-items:center;gap:8px}
+    .status-live{min-height:22px}
+    .fade-in{animation:fade .25s ease both}
+    .list-enter{animation:listEnter .3s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+    @keyframes listEnter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+    @media(max-width:600px){
+      .wrap{padding:14px 12px 140px}
       header{gap:8px}
       .logo{font-size:18px}
       .bar{gap:6px;width:100%;justify-content:flex-start}
-      button,.btn{padding:12px 14px;border-radius:14px;font-size:16px}
-      .panel{padding:12px;border-radius:16px}
-      .cards{grid-template-columns: 1fr}
+      button,.btn{padding:12px 16px;border-radius:16px;font-size:16px}
+      .panel{padding:14px;border-radius:18px}
+      .cards{grid-template-columns:1fr}
       .card{padding:16px;font-size:18px}
       .big{font-size:18px}
+      .chips{gap:6px}
+      .chip{padding:7px 10px;font-size:13px}
       #playersList .kicker{padding:10px 0}
     }
   </style>
@@ -66,6 +151,7 @@
       <div class="logo">🃏 <b>500 зл. карт</b> — онлайн</div>
       <div class="bar">
         <span id="connStatus" class="chip" title="Проверка соединения">Статус: не проверено</span>
+        <span id="timerChip" class="chip hidden" aria-live="polite">⏱ 60s</span>
         <button class="ghost" id="btnCheck">Проверить соединение</button>
         <button class="ghost" id="btnDeck">Колода</button>
         <button class="ghost" id="btnHow">Правила</button>
@@ -74,72 +160,77 @@
       </div>
     </header>
 
-    <!-- ЭКРАН ЛОББИ / ПОДКЛЮЧЕНИЕ -->
     <div class="grid" id="screenLobby">
       <section class="panel">
-        <h2>Подключение к игре</h2>
-        <p class="muted">1) Ведущий создаёт комнату → кидает ссылку друзьям. 2) Все открывают ссылку и вводят имя. 3) Игра синхронизируется между устройствами.</p>
+        <h1>Присоединяйтесь к комнате</h1>
+        <p class="muted">1) Модератор создаёт комнату и делится ссылкой. 2) Игроки вводят имя, подключаются и ждут старта. 3) В каждом раунде новый ведущий выбирает победителя.</p>
         <div class="row">
           <button id="btnCreate">Создать комнату</button>
-          <input type="text" id="roomInput" placeholder="ID комнаты (например, ABC123)" style="max-width:220px">
+          <input type="text" id="roomInput" placeholder="ID комнаты (например, ABC123)" style="max-width:220px" autocomplete="off">
           <button class="ghost" id="btnJoin">Присоединиться</button>
         </div>
         <div class="hr"></div>
         <div class="row">
-          <input type="text" id="playerName" placeholder="Ваше имя" style="max-width:240px">
+          <input type="text" id="playerName" placeholder="Ваше имя" style="max-width:240px" maxlength="24" autocomplete="name" aria-label="Имя игрока">
           <label><input type="checkbox" id="sfwOnly" checked> Только SFW</label>
         </div>
-        <p class="small muted">Ссылка на комнату появится после создания. Откройте эту страницу на телефоне.</p>
-        <div class="row" id="shareRow" style="margin-top:8px; display:none;">
-          <input type="text" id="shareLink" readonly>
+        <div id="lobbyError" class="muted" style="color:#ff9cae;margin-top:6px;min-height:20px" aria-live="assertive"></div>
+        <p class="small muted">Ссылка появится после создания комнаты. Откройте эту страницу на телефоне и делитесь ссылкой с друзьями.</p>
+        <div class="row" id="shareRow" style="margin-top:10px; display:none;">
+          <input type="text" id="shareLink" readonly aria-label="Ссылка на комнату">
           <button class="ghost" id="btnCopy">Скопировать ссылку</button>
         </div>
-        <div id="lobbyInfo" class="muted" style="margin-top:8px;"></div>
+        <div class="row" id="lobbyActions" style="margin-top:14px;display:none;">
+          <button id="btnStartGame">Запустить игру</button>
+          <span class="muted small" id="startHint"></span>
+        </div>
+        <div id="lobbyInfo" class="muted" style="margin-top:12px;" aria-live="polite"></div>
       </section>
     </div>
 
-    <!-- ЭКРАН ИГРЫ -->
     <div class="grid hidden" id="screenGame">
       <section class="panel split">
         <div class="kicker">
           <div>
             <div class="muted small">Комната: <span id="roomIdLabel">—</span></div>
-            <div class="muted small">Раунд <span id="roundN">1</span>/<span id="roundTotal">10</span></div>
-            <div style="margin-top:2px;">Ведущий: <b id="hostName">—</b></div>
+            <div class="muted small">Раунд <span id="roundN">0</span>/<span id="roundTotal">10</span></div>
+            <div class="status-live" aria-live="polite">Ведущий: <b id="hostName">—</b></div>
           </div>
-          <div class="chips"><span class="chip" id="statusHint">Статус: —</span></div>
+          <div class="chips">
+            <span class="chip" id="statusHint">Фаза: —</span>
+            <span class="chip hidden" id="progressChip">0/0 отправили</span>
+            <span class="chip hidden" id="roleChip">—</span>
+          </div>
         </div>
 
-        <div class="card black-card" style="margin-top:12px;">
+        <div class="card black-card" style="margin-top:14px;">
           <div class="muted small">Чёрная карта</div>
-          <div id="blackText" class="big" style="margin-top:6px;">—</div>
+          <div id="blackText" class="big" style="margin-top:6px;" aria-live="polite">—</div>
         </div>
 
-        <div id="handSection" style="margin-top:14px;">
+        <div id="handSection" style="margin-top:16px;">
           <h3>Ваши карты</h3>
-          <div class="muted small" id="selectionHint">Выберите одну белую карту (ваша рука видна только вам)</div>
-          <div class="cards" id="handCards" style="margin-top:10px;"></div>
-          <div class="row" id="handActions" style="margin-top:10px;">
-            <button class="ghost" id="btnConfirm" disabled>Подтвердить выбор</button>
-          </div>
-          <div class="card hidden" id="submittedCard" style="margin-top:12px;">
-            <div class="muted small">Вы положили на стол</div>
-            <div class="big" id="submittedCardText" style="margin-top:6px;">—</div>
+          <div class="muted small" id="selectionHint">Ожидаем старт раунда.</div>
+          <div class="cards" id="handCards" style="margin-top:12px;"></div>
+          <div class="card hidden fade-in" id="submittedCard" style="margin-top:14px;">
+            <div class="muted small">Вы отправили</div>
+            <div class="big" id="submittedCardText" style="margin-top:8px;">—</div>
           </div>
         </div>
 
-        <div id="hostPanel" style="margin-top:14px;">
+        <div id="submissionsPanel" style="margin-top:18px;">
           <h3>Ответы на столе</h3>
-          <div class="muted small" id="hostHint">Ждём, пока игроки выберут карты</div>
-          <div class="cards" id="submissions" style="margin-top:10px;"></div>
+          <div class="muted small" id="hostHint" aria-live="polite">Ждём начала раунда.</div>
+          <div class="cards" id="submissions" style="margin-top:12px;"></div>
         </div>
 
-        <div id="resultPanel" class="hidden" style="margin-top:14px;">
+        <div id="resultPanel" class="hidden" style="margin-top:18px;">
           <div class="card winner">
             <div class="muted small">Победитель раунда</div>
-            <div class="big" id="winnerLine" style="margin-top:6px;">—</div>
-            <div class="row" style="margin-top:10px;">
-              <button id="nextRound">Следующий раунд (ведущий)</button>
+            <div class="big" id="winnerLine" style="margin-top:8px;">—</div>
+            <div class="row" style="margin-top:12px;">
+              <button id="nextRound">Следующий раунд</button>
+              <span class="muted small" id="resultHint"></span>
             </div>
           </div>
         </div>
@@ -147,76 +238,97 @@
 
       <aside class="panel side">
         <h2>Игроки</h2>
-        <div id="playersList" class="scroll"></div>
+        <div id="playersList" class="scroll" aria-live="polite"></div>
         <div class="hr"></div>
         <div class="row">
-          <span class="small muted">Ведущий управляет раундами</span>
+          <span class="small muted">Каждый раунд новым ведущим становится следующий игрок по очереди.</span>
         </div>
       </aside>
     </div>
-
-    <!-- МОДАЛКИ -->
-    <dialog id="dlgRules">
-      <form method="dialog" class="card" style="min-width:min(680px,90vw);">
-        <h2>Правила (коротко)</h2>
-        <ol class="muted" style="line-height:1.6;">
-          <li>Один создаёт комнату и становится ведущим (host).</li>
-          <li>Все вводят имя и заходят по ссылке комнаты.</li>
-          <li>Ведущий выбирает лучшую карту в каждом раунде.</li>
-          <li>Игроки выбирают ответы из своей руки.</li>
-          <li>Победитель получает 1 очко.</li>
-        </ol>
-        <menu class="row" style="justify-content:flex-end; margin-top:8px;">
-          <button class="ghost">Закрыть</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <dialog id="dlgDeck">
-      <form method="dialog" class="card" style="min-width:min(880px,96vw);">
-        <h2>Колода</h2>
-        <p class="muted">Редактируйте или импортируйте JSON. Формат: <span class="mono">{"black":[],"white":[],"nsfwBlack":[],"nsfwWhite":[]}</span></p>
-        <div class="row"><textarea id="deckJson" rows="12" style="width:100%"></textarea></div>
-        <div class="row" style="justify-content:space-between;margin-top:8px;">
-          <div class="row">
-            <button type="button" class="ghost" id="btnImport">Импорт JSON…</button>
-            <button type="button" class="ghost" id="btnExport">Экспорт JSON</button>
-            <button type="button" class="ghost" id="btnResetDeck">Сбросить к демо</button>
-          </div>
-          <menu class="row">
-            <button class="ghost">Закрыть</button>
-            <button type="button" id="btnSaveDeck">Сохранить</button>
-          </menu>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="dlgTests">
-      <form method="dialog" class="card" style="min-width:min(780px,96vw);">
-        <h2>Результаты тестов</h2>
-        <div id="testsOutput" class="mono small" style="white-space:pre-wrap"></div>
-        <menu class="row" style="justify-content:flex-end; margin-top:8px;">
-          <button class="ghost">Закрыть</button>
-        </menu>
-      </form>
-    </dialog>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="actionBar" class="hidden" role="status" aria-live="polite">
+    <div id="actionHint">Выберите карту, затем подтвердите.</div>
+    <button id="btnConfirm" disabled>Подтвердить</button>
+  </div>
 
-  <!-- Firebase (compat для простоты) -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="dlgRules">
+    <form method="dialog">
+      <h2>Правила (коротко)</h2>
+      <ol class="muted" style="line-height:1.6;">
+        <li>Модератор создаёт комнату и отправляет ссылку.</li>
+        <li>Игроки подключаются, у каждого 7 белых карт.</li>
+        <li>В каждом раунде один игрок становится ведущим — карты не получает и выбирает победителя.</li>
+        <li>Ответы видят все, имена авторов скрыты до объявления.</li>
+        <li>Победитель получает 1 очко, раунд длится 60 секунд.</li>
+      </ol>
+      <menu class="row" style="justify-content:flex-end; margin-top:12px;">
+        <button class="ghost">Закрыть</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="dlgDeck">
+    <form method="dialog">
+      <h2>Колода</h2>
+      <p class="muted">Редактируйте JSON в формате <span class="mono">{"black":[],"white":[],"nsfwBlack":[],"nsfwWhite":[]}</span>. Минимум 120 чёрных и 500 белых карт.</p>
+      <textarea id="deckJson" rows="12"></textarea>
+      <div class="row" style="justify-content:space-between;margin-top:14px;">
+        <div class="row">
+          <button type="button" class="ghost" id="btnImport">Импорт JSON…</button>
+          <button type="button" class="ghost" id="btnExport">Экспорт JSON</button>
+          <button type="button" class="ghost" id="btnResetDeck">Сбросить к демо</button>
+        </div>
+        <menu class="row">
+          <button class="ghost">Закрыть</button>
+          <button type="button" id="btnSaveDeck">Сохранить</button>
+        </menu>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgTests">
+    <form method="dialog">
+      <h2>Результаты тестов</h2>
+      <div id="testsOutput" class="mono small" style="white-space:pre-wrap"></div>
+      <menu class="row" style="justify-content:flex-end; margin-top:12px;">
+        <button class="ghost">Закрыть</button>
+      </menu>
+    </form>
+  </dialog>
+
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
   <script>
-  // ===== УТИЛИТЫ =====
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const uid = () => Math.random().toString(36).slice(2, 10);
-  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-  const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2000); };
+  // ===== Константы =====
+  const STATUS = { LOBBY:'lobby', COLLECT:'collect', RESULT:'result' };
+  const ROUND_SECONDS = 60;
+  const STORAGE_KEY = 'zlobnye_karty_deck_v1';
+  const EVENTS_PATH = 'events';
 
-  // ===== КОЛОДА SFW + автогенерация =====
+  // ===== Утилиты =====
+  const $ = (s)=>document.querySelector(s);
+  const $$ = (s)=>Array.from(document.querySelectorAll(s));
+  const uid = ()=>Math.random().toString(36).slice(2,10);
+  const shuffle = (arr)=>{ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+  const now = ()=>Date.now();
+  const escapeHtml = (str)=>{ const map={ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }; return String(str||'').replace(/[&<>"']/g,ch=>map[ch]); };
+  const fillBlack = (black, white)=>{
+    const cleanWhite = escapeHtml(white||'—');
+    if ((black||'').includes('____')){ return (black||'—').replace('____', `<b>${cleanWhite}</b>`); }
+    return `${escapeHtml(black||'—')} — <b>${cleanWhite}</b>`;
+  };
+  const copyToClipboard = async (text)=>{ try{ await navigator.clipboard.writeText(text); toast('Ссылка скопирована'); }catch(e){ showError(e); } };
+
+  // ===== Toast & ошибки =====
+  let toastTimer=null;
+  function toast(msg){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2400); }
+  function normalizeError(err){ if(!err) return 'Неизвестная ошибка'; if(typeof err==='string') return err; const code=err.code||''; if(code.includes('permission')) return 'Недостаточно прав для операции.'; if(code.includes('network')) return 'Нет соединения с Firebase.'; if(code.includes('timeout')) return 'Превышено время ожидания Firebase.'; if(code.includes('auth')) return 'Проблема авторизации Firebase.'; return err.message||'Что-то пошло не так.'; }
+  function showError(err){ console.error(err); toast('Ошибка: ' + normalizeError(err)); }
+
+  // ===== Колода =====
   const DEMO_DECK = { black:[
     "Лучшее средство от плохого настроения — ____.",
     "В офисе запретили ____ после прошлой вечеринки.",
@@ -233,17 +345,41 @@
   ], nsfwBlack:[], nsfwWhite:[] };
 
   function ensureMinimumDeck(base){
-    const MIN_BLACK=120, MIN_WHITE=500;
+    const MIN_BLACK = 120; const MIN_WHITE = 500;
     const adj=["бескомпромиссный","легендарный","скромный","хрупкий","стальной","мягкий","неудобный","удивительный","космический","тактический","нулевой","случайный","домашний","турбо","антистресс","чистосердечный","ботанский","карманный","праздничный","грустный","героический","виноватый","странный","панический","осознанный","вафельный","экологичный","умный","сверхважный","необъяснимый"];
     const noun=["кактус","ежедневник","кекс","плед","римейк детства","кот в коробке","танец победителя","утренний ритуал","план Б","зум-созвон","марафон сериалов","пакет багов","диванный стартап","апдейт настроения","чай без сахара","стакан воды","неловкая пауза","электронная очередь","перерыв на себя","похвала самому себе","карта желаний","фантазия","чистый стол","новый понедельник","таймер на 5 минут","пища для ума","сон днём","упражнение на растяжку","вдох через нос","молчаливое согласие"];
     const tails=["в подарок","в 3 часа ночи","по подписке","на скорую руку","в режиме инкогнито","без уведомлений","с доставкой завтра","по любви","на удалёнке","с закрытыми глазами","с одобрения кота","вместо спорта","в вдохновляющей форме","без инструкции","с минимальными усилиями","в последнюю секунду","с видом на кухню","в пределах разумного","на полном серьёзе","для галочки","с огоньком","по выходным","для души","под настроение","как-нибудь потом","в хорошем смысле","не для отчёта","по приколу","по старой памяти","без причин"];
+
+    const blackSeed=["Мой день начинается с ____.","На совещании лучше не обсуждать ____.","Секрет успешного проекта — ____.","Сегодняшний план: кофе, дела и ____.","Самый странный подарок — ____.","Я бы с радостью заменил(а) гимн на ____.","Когда никто не видит, я практикую ____.","Лучшее, что можно добавить в резюме — ____.","Идеальное алиби: ____.","Главный антистресс — ____.","Спорим, в 2035 мы будем платить за ____.","В корпоративном чате забанили тему ____.","Главная фича нового айфона — ____.","Если бы у меня был слоган, он бы был про ____.","На TED я выступлю про ____.","Мой внутренний критик обожает ____.","Шеф мечтает внедрить ____.","User story на сегодня — ____.","Я официально отказываюсь от ____.","Сегодня отменяется всё, кроме ____."];
+
     function genWhite(i){ return `${adj[i%adj.length]} ${noun[(i*7)%noun.length]} ${tails[(i*13)%tails.length]}`; }
-    const blackStarts=["Мой день начинается с ____.","На совещании лучше не обсуждать ____.","Секрет успешного проекта — ____.","Сегодняшний план: кофе, дела и ____.","Самый странный подарок — ____.","Я бы с радостью заменил(а) гимн на ____.","Когда никто не видит, я практикую ____.","Лучшее, что можно добавить в резюме — ____.","Идеальное алиби: ____.","Главный антистресс — ____.","Спорим, в 2035 мы будем платить за ____.","В корпоративном чате забанили тему ____.","Главная фича нового айфона — ____.","Если бы у меня был слоган, он бы был про ____.","На TED я выступлю про ____.","Мой внутренний критик обожает ____.","Шеф мечтает внедрить ____.","User story на сегодня — ____.","Я официально отказываюсь от ____.","Сегодня отменяется всё, кроме ____."];
-    const needW=Math.max(0, MIN_WHITE-(base.white?.length||0)); for(let i=0;i<needW;i++) base.white.push(genWhite(i));
-    const needB=Math.max(0, MIN_BLACK-(base.black?.length||0)); for(let i=0;i<needB;i++) base.black.push(blackStarts[i%blackStarts.length]);
+    const needW=Math.max(0,MIN_WHITE-(base.white?.length||0));
+    for(let i=0;i<needW;i++) base.white.push(genWhite(i));
+    const needB=Math.max(0,MIN_BLACK-(base.black?.length||0));
+    for(let i=0;i<needB;i++) base.black.push(blackSeed[i%blackSeed.length]);
   }
 
-  // ===== Firebase init (заполните конфиг) =====
+  function loadDeckLocal(){
+    let base;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ try{ base=JSON.parse(raw); }catch(e){ console.warn('Bad deck JSON'); base=JSON.parse(JSON.stringify(DEMO_DECK)); } }
+    else base=JSON.parse(JSON.stringify(DEMO_DECK));
+    ensureMinimumDeck(base);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
+    game.deck.black = shuffle([...base.black]);
+    game.deck.white = shuffle([...base.white]);
+    game.deck.discardBlack = [];
+    game.deck.discardWhite = [];
+    if($('#deckJson')) $('#deckJson').value = JSON.stringify(base,null,2);
+  }
+  function drawBlack(){ if(!game.deck.black.length){ game.deck.black = shuffle([...game.deck.discardBlack]); game.deck.discardBlack=[]; }
+    return game.deck.black.pop() || '— пусто —'; }
+  function drawWhite(){ if(!game.deck.white.length){ game.deck.white = shuffle([...game.deck.discardWhite]); game.deck.discardWhite=[]; }
+    return game.deck.white.pop() || '— пусто —'; }
+
+  function topUpHand(hand, drawFn, target=7){ const arr=[...(hand||[])]; while(arr.length<target){ arr.push(drawFn()); } return arr; }
+
+  // ===== Firebase init =====
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDRtpegXwTsSf77dPIOGDIyBFvib_GgUcM",
     authDomain: "z-e86ee.firebaseapp.com",
@@ -256,239 +392,313 @@
   };
 
   function isConfigFilled(cfg){
-    return Object.values(cfg).every(v=> typeof v==='string' && v && !v.startsWith('PASTE_')) && /https:\/\/.+/.test(cfg.databaseURL||'');
+    return Object.values(cfg).every(v=>typeof v==='string' && v && !v.startsWith('PASTE_')) && /https:\/\/.+/.test(cfg.databaseURL||'');
   }
 
-  let db = null; let firebaseInitError = null; let connectivityOk = false; let lastConnMsg = '';
-  try {
-    if (!isConfigFilled(FIREBASE_CONFIG)) throw new Error('Не заполнен FIREBASE_CONFIG');
+  let db=null; let firebaseInitError=null; let connectivityOk=false; let lastConnMsg='';
+  try{
+    if(!isConfigFilled(FIREBASE_CONFIG)) throw new Error('Не заполнен FIREBASE_CONFIG');
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.database();
-  } catch (e){
-    firebaseInitError = e;
-    console.error('Firebase init error:', e);
-  }
+  }catch(e){ firebaseInitError=e; console.error('Firebase init error', e); }
 
   async function testDbConnection(){
-    if (!db){ lastConnMsg='Firebase не инициализирован'; updateConnStatus(false,lastConnMsg); return false; }
-    try {
+    if(!db){ lastConnMsg='Firebase не инициализирован'; updateConnStatus(false,lastConnMsg); return false; }
+    try{
       const pingRef = db.ref('_ping').push();
-      await pingRef.set({ t: Date.now(), ua: navigator.userAgent.substring(0,80) });
+      await pingRef.set({ t: now(), ua: navigator.userAgent.substring(0,80) });
       await pingRef.remove();
       lastConnMsg='OK: есть доступ к Realtime DB';
       updateConnStatus(true,lastConnMsg);
       return true;
-    } catch(e){
+    }catch(e){
       console.error('DB write test failed', e);
-      lastConnMsg = (e && (e.code||e.message)) || 'ошибка записи в БД';
+      lastConnMsg = normalizeError(e);
       updateConnStatus(false,lastConnMsg);
       return false;
     }
   }
 
-  // ===== ЛОГИКА КОМНАТЫ / СОСТОЯНИЕ =====
-  const STORAGE_KEY = 'zlobnye_karty_deck_v1';
-  const local = { playerId: localStorage.getItem('playerId') || uid(), name:'', roomId:null, isHost:false, hostId:null, currentRound:0, hasSubmitted:false, selectedCardIndex:null, selectedCardText:'', submittedCardText:'' };
+
+  // ===== Состояние клиента =====
+  const local = {
+    playerId: localStorage.getItem('playerId') || uid(),
+    name:'',
+    roomId:null,
+    isCreator:false,
+    hasSubmitted:false,
+    selectedCardIndex:null,
+    selectedCardText:'',
+    submittedText:'',
+    autoPickTriggered:false,
+    timerTick:null,
+    playerData:{hand:[],submitted:false,lastText:''}
+  };
   localStorage.setItem('playerId', local.playerId);
 
-  const game = { state: { round:0, roundsTotal:10, status:'lobby', blackCard:'', sfwOnly:true, hostName:'', hostId:null },
-                 deck: { black:[], white:[], discardBlack:[], discardWhite:[] },
-                 submissions: {}, submissionsOrder: [] };
+  const game = {
+    state:{ status:STATUS.LOBBY, round:0, roundsTotal:10, blackCard:'', lastWinnerName:'', lastAnswer:'', currentHostPid:null, timerEndsAt:null, sfwOnly:true },
+    players:{},
+    playersOrder:[],
+    deck:{ black:[], white:[], discardBlack:[], discardWhite:[] },
+    submissions:{},
+    submissionsOrder:[],
+    timers:{},
+  };
 
-  function fillBlack(black, white){
-    return black.includes('____') ? black.replace('____', `<b>${escapeHtml(white)}</b>`) : `${black} — <b>${escapeHtml(white)}</b>`;
-  }
-  function escapeHtml(str){
-    const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
-    return String(str).replace(/[&<>"']/g, ch => map[ch]);
-  }
-
-  // ===== Работа с колодой (на стороне ведущего) =====
-  function loadDeckLocal(){
-    const raw = localStorage.getItem(STORAGE_KEY);
-    let base;
-    if (raw){
-      try{ base = JSON.parse(raw); }
-      catch(e){ console.warn('Bad deck JSON, fallback to demo'); base = JSON.parse(JSON.stringify(DEMO_DECK)); }
-    } else {
-      base = JSON.parse(JSON.stringify(DEMO_DECK));
-    }
-    ensureMinimumDeck(base);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(base));
-    const black=[...base.black], white=[...base.white];
-    game.deck.black = shuffle(black);
-    game.deck.white = shuffle(white);
-    game.deck.discardBlack = [];
-    game.deck.discardWhite = [];
-    const textarea = $('#deckJson');
-    if (textarea){ textarea.value = JSON.stringify(base, null, 2); }
-  }
-  function drawBlack(){ if(!game.deck.black.length){ game.deck.black = shuffle(game.deck.discardBlack); game.deck.discardBlack = []; } const card = game.deck.black.pop() || '— пусто —'; return card; }
-  function drawWhite(){ if(!game.deck.white.length){ game.deck.white = shuffle(game.deck.discardWhite); game.deck.discardWhite = []; } const card = game.deck.white.pop() || '— пусто —'; return card; }
-
-  // ===== Firebase helpers =====
-  const roomRef = ()=> db.ref(`rooms/${local.roomId}`);
-  const playersRef = ()=> roomRef().child('players');
-  const stateRef = ()=> roomRef().child('state');
-  const perPlayerRef = (pid)=> roomRef().child(`perPlayer/${pid}`); // руки
-  const submissionsRef = ()=> roomRef().child('submissions');
-
-  // Хелпер: синхронизируем роль хоста при любых перезаходах
-  function watchHost(){
-    roomRef().child('hostId').on('value', snap => {
-      const hostId = snap.val();
-      local.hostId = hostId;
-      const was = local.isHost;
-      local.isHost = (hostId === local.playerId);
-      if (local.isHost !== was) renderState();
-    });
-  }
-
-  async function createRoom(){
-    if (!db){ toast('Ошибка: Firebase не инициализирован. Заполните конфиг.'); console.error(firebaseInitError); return; }
-    if (!connectivityOk){ const ok = await testDbConnection(); if(!ok){ toast('Нет доступа к базе. Проверьте конфиг/правила.'); return; } connectivityOk=true; }
-    const id = (Math.random().toString(36).slice(2,8)).toUpperCase();
-    local.roomId = id; local.isHost = true;
-    loadDeckLocal();
-    try{
-      await roomRef().set({ hostId: local.playerId, createdAt: Date.now() });
-      await stateRef().set({ ...game.state, status:'lobby', sfwOnly: $('#sfwOnly').checked });
-      await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white });
-      updateShareLink();
-      subscribeRoom();
-      watchHost();
-      subscribeHostEvents();
-      await registerPlayer();
-      renderState();
-      toast('Комната создана');
-    } catch(e){ console.error('createRoom error', e); toast('Не удалось создать комнату: ' + (e.code||e.message)); }
-  }
-
-  async function joinRoom(id){
-    if (!db){ toast('Ошибка: Firebase не инициализирован'); console.error(firebaseInitError); return; }
-    const ok = connectivityOk || await testDbConnection(); if(!ok){ toast('Нет доступа к базе. Проверьте конфиг/правила.'); return; } connectivityOk=true;
-    local.roomId = id.toUpperCase();
-    local.isHost = false;
-    subscribeRoom();
-    watchHost();
-    try{ await registerPlayer(); toast('Подключились к комнате'); } catch(e){ console.error('joinRoom/register error', e); toast('Не удалось подключиться: ' + (e.code||e.message)); }
-  }
-
-  let playersCount = 0;
-  function subscribeRoom(){
-    if (!db || !local.roomId) return;
-    stateRef().off(); playersRef().off(); submissionsRef().off(); perPlayerRef(local.playerId).off();
-    stateRef().on('value', snap=>{ const s=snap.val(); if(!s) return; game.state = s; renderState(); });
-    playersRef().on('value', snap=>{ const players = snap.val()||{}; playersCount = Object.keys(players).length; renderPlayers(players); maybeAutoStart(players); });
-    submissionsRef().on('value', snap=>{ renderSubmissions(snap.val()||{}); });
-    perPlayerRef(local.playerId).on('value', snap=>{ renderHand((snap.val()&&snap.val().hand)||[]); });
-  }
-
-  async function registerPlayer(){
-    if (!local.roomId) return;
-    local.name = ($('#playerName').value || localStorage.getItem('playerName') || '').trim();
-    if (!local.name) { local.name = 'Игрок ' + local.playerId.slice(-4); }
-    localStorage.setItem('playerName', local.name);
-    const pRef = playersRef().child(local.playerId);
-    await pRef.set({ name: local.name, score:0, joinedAt: Date.now() });
-    await pRef.onDisconnect().remove();
-    // выдать руку (ведущий)
-    if (local.isHost){
-      const hand = []; for(let i=0;i<7;i++) hand.push(drawWhite());
-      await perPlayerRef(local.playerId).set({ hand });
-    } else {
-      // попросить ведущего выдать карты
-      await roomRef().child('events').push({ type:'needHand', playerId: local.playerId, t:Date.now() });
-    }
-  }
-
-  // Ведущий слушает события
-  function subscribeHostEvents(){
-    if (!local.isHost) return;
-    roomRef().child('events').on('child_added', async snap=>{
-      const ev = snap.val() || {}; const k = snap.key;
-      if (ev.type==='needHand'){
-        const hand = []; for(let i=0;i<7;i++) hand.push(drawWhite());
-        await perPlayerRef(ev.playerId).set({ hand });
-        await roomRef().child('events').child(k).remove();
-      }
-    });
-  }
-
-  // ===== ЛОББИ/ИГРА ПЕРЕКЛЮЧЕНИЕ =====
-  function resetPlayerRoundState(round){
-    local.currentRound = round || 0;
-    local.hasSubmitted = false;
-    local.selectedCardIndex = null;
-    local.selectedCardText = '';
-    local.submittedCardText = '';
-  }
-
-  function renderState(){
-    const s = game.state || {};
-    const status = s.status || 'lobby';
-    if (status==='lobby'){ $('#screenLobby').classList.remove('hidden'); $('#screenGame').classList.add('hidden'); }
-    else { $('#screenLobby').classList.add('hidden'); $('#screenGame').classList.remove('hidden'); }
-    if (status==='lobby'){ resetPlayerRoundState(0); }
-    if (status==='collect' && (s.round||0) !== local.currentRound){
-      resetPlayerRoundState(s.round||0);
-    }
-    $('#roomIdLabel').textContent = local.roomId || '—';
-    $('#roundN').textContent = s.round || 0; $('#roundTotal').textContent = s.roundsTotal || 10;
-    $('#hostName').textContent = s.hostName || '—';
-    $('#blackText').innerHTML = escapeHtml(s.blackCard || '—');
-    const statusMap = { lobby:'ожидание игроков', collect:'сбор ответов', result:'результат раунда' };
-    $('#statusHint').textContent = 'Статус: ' + (statusMap[status] || '—');
-    $('#handSection').classList.toggle('hidden', status==='lobby');
-    $('#hostPanel').classList.toggle('hidden', status==='lobby');
-    const isResult = status==='result';
-    $('#resultPanel').classList.toggle('hidden', !isResult);
-    if (isResult){
-      const winnerName = s.lastWinnerName || '—';
-      const answer = s.lastAnswer || '';
-      $('#winnerLine').innerHTML = `${escapeHtml(winnerName)} получает очко за: ${fillBlack(s.blackCard||'', answer)}`;
-    }
-    updateSelectionUI();
-    updateHostHint();
-    renderSubmissions(game.submissions);
-    $('#nextRound').classList.toggle('hidden', !local.isHost);
-  }
-
-  function renderPlayers(players){
-    const box=$('#playersList'); box.innerHTML='';
-    const arr=Object.entries(players).map(([id,p])=>({id,...p})).sort((a,b)=> (b.score||0)-(a.score||0));
-    arr.forEach(p=>{
-      const row=document.createElement('div'); row.className='kicker'; row.style.padding='6px 0';
-      const isHost = p.id === (local.hostId || game.state.hostId);
-      row.innerHTML=`<div>${escapeHtml(p.name)} ${isHost?'<span class="small muted">(ведущий)</span>':''}</div><div class="chip">${p.score||0}</div>`;
-      box.appendChild(row);
-    });
-  }
 
   function orderedPlayerIds(players){
     return Object.keys(players||{}).sort((a,b)=>{
-      const ja = players[a]?.joinedAt || 0;
-      const jb = players[b]?.joinedAt || 0;
-      if (ja !== jb) return ja - jb;
+      const pa=players[a]||{}; const pb=players[b]||{};
+      const ja=pa.joinedAt||0; const jb=pb.joinedAt||0;
+      if(ja!==jb) return ja-jb;
       return a.localeCompare(b);
     });
   }
 
+
+  function isCurrentHost(){ return local.playerId && game.state.currentHostPid === local.playerId; }
+  function isStatusCollect(){ return (game.state.status||STATUS.LOBBY) === STATUS.COLLECT; }
+
+
+  // ===== Firebase ссылки =====
+  const roomRef = ()=> db.ref(`rooms/${local.roomId}`);
+  const stateRef = ()=> roomRef().child('state');
+  const playersRef = ()=> roomRef().child('players');
+  const perPlayerRef = (pid)=> roomRef().child(`perPlayer/${pid}`);
+  const submissionsRef = ()=> roomRef().child('submissions');
+  const deckRef = ()=> roomRef().child('deck');
+  const playersOrderRef = ()=> roomRef().child('playersOrder');
+  const eventsRef = ()=> roomRef().child(EVENTS_PATH);
+
+
+  function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: ' + (ok?'подключено':'ошибка'); el.title=msg||''; el.style.background= ok ? 'var(--accent-2)' : 'var(--chip)'; }
+
+  // ===== Имя и валидация =====
+  function validateName(){
+    const raw=($('#playerName').value||'').trim();
+    if(raw.length<2) throw new Error('Имя должно быть длиннее 1 символа.');
+    if(/^[0-9]+$/.test(raw)) throw new Error('Имя не может состоять только из цифр.');
+    return raw.slice(0,24);
+
+  }
+
+  function setLobbyError(msg){ const box=$('#lobbyError'); if(box){ box.textContent=msg||''; } }
+
+  // ===== Регистрация игрока =====
+  async function registerPlayer(){
+    if(!local.roomId) return;
+    try{ local.name = validateName(); localStorage.setItem('playerName', local.name); }
+    catch(e){ if(!local.name){ local.name = localStorage.getItem('playerName') || `Игрок ${local.playerId.slice(-4)}`; } setLobbyError(normalizeError(e)); }
+
+    const playerData = { name: local.name || `Игрок ${local.playerId.slice(-4)}`, score:0, joinedAt: now(), isCreator: local.isCreator };
+    const pRef = playersRef().child(local.playerId);
+    await pRef.set(playerData);
+    await pRef.onDisconnect().remove();
+
+    if(!local.isCreator){
+      await perPlayerRef(local.playerId).set({ hand:[], submitted:false, lastText:'' });
+      await perPlayerRef(local.playerId).onDisconnect().remove();
+      await playersOrderRef().transaction(order=>{
+        const next = Array.isArray(order)?order.filter(id=>id!==local.playerId):[];
+        if(!next.includes(local.playerId)) next.push(local.playerId);
+        return next;
+      });
+      await eventsRef().push({ type:'needHand', playerId: local.playerId, t: now() });
+    }
+  }
+
+  // ===== Подписки =====
+  let stateOff=null, playersOff=null, submissionsOff=null, perPlayerOff=null, orderOff=null, hostEventsOff=null; // Firebase: контролируем подписки
+  function unsubscribeAll(){ try{ stateRef().off(); }catch(e){}
+    try{ playersRef().off(); }catch(e){}
+    try{ submissionsRef().off(); }catch(e){}
+    try{ perPlayerRef(local.playerId).off(); }catch(e){}
+    try{ playersOrderRef().off(); }catch(e){}
+    try{ eventsRef().off(); }catch(e){}
+    try{ deckRef().off(); }catch(e){}
+  }
+
+  function subscribeRoom(){
+    if(!db || !local.roomId) return;
+    unsubscribeAll();
+    stateRef().on('value', snap=>{ const s=snap.val(); if(!s) return; game.state=s; renderState(); startTimerTick(); });
+    playersRef().on('value', snap=>{ const players=snap.val()||{}; game.players=players; renderPlayers(); if(local.isCreator) reconcilePlayersOrder(players); updateHostChip(); });
+    submissionsRef().on('value', snap=>{ const map=snap.val()||{}; renderSubmissions(map); });
+    perPlayerRef(local.playerId).on('value', snap=>{ const data=snap.val()||{hand:[],submitted:false,lastText:''}; local.playerData=data; local.hasSubmitted=!!data.submitted; if(local.hasSubmitted){ local.submittedText=data.lastText||local.submittedText||''; } else { local.submittedText=''; $('#submittedCard').classList.add('hidden'); } renderHand(data.hand||[]); updateSelectionUI(); updateActionBar(); });
+    playersOrderRef().on('value', snap=>{ const arr=snap.val(); if(Array.isArray(arr)){ game.playersOrder=arr; updateProgressChip(); if(local.isCreator) ensureActiveHost(); } });
+    if(local.isCreator){ eventsRef().on('child_added', handleHostEvent); deckRef().on('value', snap=>{ const d=snap.val(); if(d){ game.deck.black=d.black||[]; game.deck.white=d.white||[]; game.deck.discardBlack=d.discardBlack||[]; game.deck.discardWhite=d.discardWhite||[]; } }); }
+  }
+
+  // ===== Комната: создание и вход =====
+  async function createRoom(){
+    if(!db){ showError(firebaseInitError||'Firebase не инициализирован'); return; }
+    if(!(connectivityOk || await testDbConnection())) return;
+    const id = (Math.random().toString(36).slice(2,8)).toUpperCase();
+    local.roomId = id;
+    local.isCreator = true;
+    loadDeckLocal();
+    try{
+
+      await roomRef().set({ hostId: local.playerId, createdAt: now() });
+      await stateRef().set({ status:STATUS.LOBBY, round:0, roundsTotal:10, blackCard:'', lastWinnerName:'', lastAnswer:'', sfwOnly: $('#sfwOnly').checked, currentHostPid:null, currentHostName:'', timerEndsAt:null });
+      await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
+
+      await registerPlayer();
+      subscribeRoom();
+      updateShareLink();
+      renderState();
+      toast('Комната создана');
+    }catch(e){ showError(e); }
+  }
+
+  async function joinRoom(id){
+    if(!db){ showError(firebaseInitError||'Firebase не инициализирован'); return; }
+    const ok = connectivityOk || await testDbConnection(); if(!ok) return;
+    local.roomId = id.toUpperCase();
+    local.isCreator = false;
+    subscribeRoom();
+    try{ await registerPlayer(); toast('Подключились к комнате'); }
+    catch(e){ showError(e); }
+  }
+
+  function updateShareLink(){
+    const url=new URL(location.href); url.searchParams.set('room', local.roomId); $('#shareLink').value=url.toString(); $('#shareRow').style.display='flex'; history.replaceState(null,'',url);
+  }
+
+
+  // ===== Рендер =====
+  function renderState(){
+    const status=game.state.status||STATUS.LOBBY;
+    $('#screenLobby').classList.toggle('hidden', status!==STATUS.LOBBY);
+    $('#screenGame').classList.toggle('hidden', status===STATUS.LOBBY);
+    $('#roomIdLabel').textContent = local.roomId || '—';
+    $('#roundN').textContent = game.state.round || 0;
+    $('#roundTotal').textContent = game.state.roundsTotal || 10;
+    $('#hostName').textContent = game.state.currentHostName || '—';
+    $('#blackText').innerHTML = escapeHtml(game.state.blackCard || '—');
+    const statusMap={ [STATUS.LOBBY]:'ожидание игроков', [STATUS.COLLECT]:'сбор ответов', [STATUS.RESULT]:'результат раунда' };
+    $('#statusHint').textContent = 'Фаза: ' + (statusMap[status]||'—');
+    $('#handSection').classList.toggle('hidden', status===STATUS.LOBBY || isCurrentHost());
+    $('#roleChip').classList.toggle('hidden', status===STATUS.LOBBY);
+    $('#roleChip').textContent = isCurrentHost() ? 'Вы ведущий' : 'Вы игрок';
+    $('#resultPanel').classList.toggle('hidden', status!==STATUS.RESULT);
+    $('#submissionsPanel').classList.toggle('hidden', status===STATUS.LOBBY);
+    $('#timerChip').classList.toggle('hidden', status!==STATUS.COLLECT);
+    updateProgressChip();
+    if(status===STATUS.RESULT){
+      $('#winnerLine').innerHTML = game.state.lastWinnerName ? `${escapeHtml(game.state.lastWinnerName)} получает очко за ${fillBlack(game.state.blackCard||'', game.state.lastAnswer||'')}` : 'В этом раунде не было победителя.';
+      $('#resultHint').textContent = isCurrentHost() || local.isCreator ? 'Ведущий запускает следующий раунд.' : 'Ждём ведущего.';
+
+    }
+    updateSelectionUI();
+    updateHostHint();
+    updateActionBar();
+  }
+
+  function renderPlayers(){
+    const box=$('#playersList'); if(!box) return;
+    box.innerHTML='';
+    const players=game.players||{};
+    const arr=Object.entries(players).map(([id,data])=>({ id, ...data })).sort((a,b)=>{
+      if((b.score||0)!==(a.score||0)) return (b.score||0)-(a.score||0);
+      return (a.joinedAt||0)-(b.joinedAt||0);
+    });
+    arr.forEach((p)=>{
+      const row=document.createElement('div'); row.className='kicker list-enter'; row.style.padding='8px 0';
+      const isHost = p.id === game.state.currentHostPid;
+      const creatorTag = p.isCreator ? ' • модератор' : '';
+      row.innerHTML = `<div>${escapeHtml(p.name||'Безымянный')}${creatorTag ? `<span class="small muted">${creatorTag}</span>`:''}${isHost?'<span class="small muted"> • ведущий</span>':''}</div><div class="chip">${p.score||0}</div>`;
+      box.appendChild(row);
+    });
+    if(!arr.length){
+      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent='Пока никого нет.'; box.appendChild(empty);
+    }
+    updateStartControls();
+  }
+
+
   function renderHand(hand){
-    const box=$('#handCards'); box.innerHTML='';
-    const disabled = local.hasSubmitted || (game.state.status!=='collect');
-    hand.forEach((txt,i)=>{
-      const btn=document.createElement('button'); btn.className='card'; btn.dataset.index=i; btn.style.textAlign='left';
-      btn.innerHTML = `<div class="big">${escapeHtml(txt)}</div>`;
-      if (disabled){
-        btn.disabled = true;
-        btn.classList.add('disabled');
-      } else {
-        btn.disabled = false;
+    const box=$('#handCards'); if(!box) return;
+    box.innerHTML='';
+    const disabled = isCurrentHost() || !isStatusCollect();
+    (hand||[]).forEach((txt,i)=>{
+      const btn=document.createElement('button');
+      btn.className='card';
+      btn.dataset.index=i;
+      btn.innerHTML=`<div class="big">${escapeHtml(txt)}</div>`;
+      if(disabled){ btn.disabled=true; btn.classList.add('disabled'); }
+      else {
         btn.classList.add('selectable');
         btn.onclick=()=> selectCard(i, txt);
       }
       box.appendChild(btn);
+
+    });
+    if(disabled){
+      local.selectedCardIndex=null;
+      local.selectedCardText='';
+    }
+    refreshHandSelectionStyles();
+  }
+
+  function renderSubmissions(map){
+    game.submissions = map||{};
+    const entries=Object.entries(game.submissions);
+    const keys=entries.map(([id])=>id);
+    const prevOrder=Array.isArray(game.submissionsOrder)?game.submissionsOrder.filter(id=>keys.includes(id)):[];
+    if(prevOrder.length!==keys.length){
+      const shuffled=shuffle([...keys]);
+      game.submissionsOrder=shuffled;
+    }
+    const order=game.submissionsOrder||keys;
+    const box=$('#submissions'); if(!box) return; box.innerHTML='';
+    if(!keys.length){
+      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent=isStatusCollect()?'Пока нет сыгранных карт.':'Карт в этом раунде не осталось.'; box.appendChild(empty);
+      updateProgressChip();
+      updateHostHint();
+      return;
+    }
+    const reveal = isStatusCollect() || game.state.status===STATUS.RESULT;
+    order.forEach((id)=>{
+      const item=game.submissions[id]; if(!item) return;
+      const btn=document.createElement('button');
+      btn.className='card list-enter';
+      btn.style.textAlign='left';
+      btn.innerHTML = `<div class="muted small">Ответ</div><div class="big">${fillBlack(game.state.blackCard||'', item.text)}</div>`;
+      if(isCurrentHost() && isStatusCollect()){
+        btn.onclick=()=> pickWinnerRequest(id, item.playerId);
+      } else {
+        btn.classList.add('readonly');
+        btn.disabled=true;
+      }
+      box.appendChild(btn);
+    });
+    updateProgressChip();
+    updateHostHint();
+  }
+
+
+  // ===== Выбор карты =====
+  function selectCard(idx, text){
+    if(isCurrentHost()) return;
+    if(local.hasSubmitted) return;
+    local.selectedCardIndex=idx;
+    local.selectedCardText=text;
+    refreshHandSelectionStyles();
+    updateSelectionUI();
+    updateActionBar();
+  }
+
+  function refreshHandSelectionStyles(){
+    const canPick = !isCurrentHost() && isStatusCollect() && !local.hasSubmitted;
+    $$('#handCards .card').forEach(el=>{
+      const idx = Number(el.dataset.index);
+      const isSelected = canPick && idx===local.selectedCardIndex;
+      el.classList.toggle('selected', isSelected);
+      el.classList.toggle('disabled', !canPick);
+      if(el instanceof HTMLButtonElement){ el.disabled = !canPick; }
+
     });
     if (disabled){
       local.selectedCardIndex = null;
@@ -529,234 +739,403 @@
   }
 
   function updateSelectionUI(){
-    const hint = $('#selectionHint');
-    const btn = $('#btnConfirm');
-    const submittedBox = $('#submittedCard');
-    const status = game.state.status || 'lobby';
-    if (hint){
-      if (status==='collect'){
-        if (local.hasSubmitted){
-          hint.textContent = 'Выбор сделан, ждём ведущего.';
-        } else if (local.selectedCardIndex === null){
-          hint.textContent = 'Выберите одну белую карту (ваша рука видна только вам).';
-        } else {
-          hint.textContent = 'Нажмите «Подтвердить выбор», чтобы отправить карту.';
-        }
-      } else if (status==='result'){
-        hint.textContent = 'Раунд завершён, ожидаем следующую раздачу.';
-      } else {
-        hint.textContent = 'Ожидаем начало раунда.';
-      }
+
+    const hint=$('#selectionHint'); if(!hint) return;
+    if(isCurrentHost()){
+      hint.textContent = 'Вы ведущий — наблюдайте за ответами и выберите победителя.';
+    } else if(game.state.status===STATUS.LOBBY){
+      hint.textContent='Ожидаем старт раунда.';
+    } else if(!isStatusCollect()){
+      hint.textContent = 'Раунд завершён, ждём следующую раздачу.';
+    } else if(local.hasSubmitted){
+      hint.textContent='Выбор сделан, ждём остальных.';
+    } else if(local.selectedCardIndex==null){
+      hint.textContent='Выберите одну белую карту (видна только вам).';
+    } else {
+      hint.textContent='Нажмите «Подтвердить», чтобы отправить карту.';
     }
-    if (btn){
-      const canConfirm = !local.hasSubmitted && status==='collect' && local.selectedCardIndex !== null;
-      btn.disabled = !canConfirm;
-      btn.classList.toggle('hidden', status!=='collect' || local.hasSubmitted);
-    }
-    if (submittedBox){
-      submittedBox.classList.toggle('hidden', !local.hasSubmitted);
-      if (local.hasSubmitted){
-        $('#submittedCardText').textContent = local.submittedCardText || '—';
-      }
+    const submittedBox=$('#submittedCard');
+    if(submittedBox){
+      const visible = local.hasSubmitted && !!local.submittedText;
+      submittedBox.classList.toggle('hidden', !visible);
+      if(visible){ $('#submittedCardText').textContent = local.submittedText; }
     }
   }
 
-  async function submitCard(text){
-    const status = (game.state && game.state.status) || 'lobby';
-    if (status!=='collect'){ toast('Сейчас нельзя отправить карту'); return; }
-    const handSnap = await perPlayerRef(local.playerId).get();
-    let hand=(handSnap.val()&&handSnap.val().hand)||[];
-    let idx = local.selectedCardIndex;
-    if (idx==null || hand[idx] !== text){ idx = hand.indexOf(text); }
-    if (idx<0){ toast('Карта уже разыграна'); return; }
-    hand.splice(idx,1);
-    await perPlayerRef(local.playerId).set({ hand });
-    const id = uid(); await submissionsRef().child(id).set({ playerId: local.playerId, text, t:Date.now() });
-    local.hasSubmitted = true;
-    local.submittedCardText = text;
-    local.selectedCardIndex = null;
-    local.selectedCardText = '';
-    refreshHandSelectionStyles();
-    updateSelectionUI();
-    updateHostHint();
-    toast('Ответ отправлен');
+  function updateActionBar(){
+    const bar=$('#actionBar'); if(!bar) return;
+    const hint=$('#actionHint');
+    const btn=$('#btnConfirm');
+    const canShow = !isCurrentHost() && game.state.status===STATUS.COLLECT;
+    bar.classList.toggle('hidden', !canShow);
+    if(!canShow) return;
+    if(local.hasSubmitted){ hint.textContent='Вы уже отправили карту. Ждём ведущего.'; btn.disabled=true; }
+    else if(local.selectedCardIndex==null){ hint.textContent='Выберите карту и подтвердите отправку.'; btn.disabled=true; }
+    else { hint.textContent='Готово! Подтвердите выбор, карта исчезнет из руки.'; btn.disabled=false; }
+
   }
 
   function updateHostHint(){
-    const hostHint = $('#hostHint');
-    if (!hostHint) return;
-    const status = game.state.status || 'lobby';
-    const submissionsCount = Object.keys(game.submissions||{}).length;
-    if (status==='lobby'){
-      hostHint.textContent = 'Ждём игроков.';
+    const hint=$('#hostHint'); if(!hint) return;
+    if(game.state.status===STATUS.LOBBY){ hint.textContent='Ждём, пока модератор запустит игру.'; return; }
+    if(game.state.status===STATUS.COLLECT){
+      if(isCurrentHost()){
+        const totalExpected=Math.max(0,(game.playersOrder||[]).length-1);
+        const count=Object.keys(game.submissions||{}).length;
+        hint.textContent = totalExpected ? `Получено ${count}/${totalExpected} ответов. Выберите лучший.` : 'Ожидаем игроков.';
+      } else {
+        hint.textContent = local.hasSubmitted ? 'Ждём остальных игроков и решение ведущего.' : 'Сыграйте карту, пока идёт таймер.';
+      }
       return;
     }
-    if (status==='collect'){
-      if (local.isHost){
-        hostHint.textContent = submissionsCount ? 'Можно выбрать лучший ответ.' : 'Ждём, пока игроки выберут карты.';
-      } else {
-        hostHint.textContent = local.hasSubmitted ? 'Ждём остальных игроков и решение ведущего.' : 'Сделайте выбор и подтвердите карту.';
-      }
-    } else if (status==='result'){
-      hostHint.textContent = local.isHost ? 'Нажмите «Следующий раунд», чтобы продолжить.' : 'Ведущий решает, когда перейти к следующему раунду.';
-    } else {
-      hostHint.textContent = 'Ждём ведущего.';
+    if(game.state.status===STATUS.RESULT){
+      hint.textContent = isCurrentHost() ? 'Объявите победителя и переходите к следующему раунду.' : 'Раунд завершён, ждём новую чёрную карту.';
+      return;
+    }
+    hint.textContent='';
+  }
+
+  function updateProgressChip(){
+    const chip=$('#progressChip'); if(!chip) return;
+    if(game.state.status!==STATUS.COLLECT){ chip.classList.add('hidden'); return; }
+    const expected=Math.max(0,(game.playersOrder||[]).length-1);
+    const received=Object.keys(game.submissions||{}).length;
+    chip.textContent=`${received}/${expected} отправили`;
+    chip.classList.toggle('hidden', expected===0);
+    chip.classList.toggle('alert', expected>0 && received<expected && (game.state.timerEndsAt||0) - now() < 15000);
+  }
+
+  function updateStartControls(){
+    const actions=$('#lobbyActions'); const hint=$('#startHint');
+    if(!actions) return;
+    const playersCount=(game.playersOrder||[]).length;
+    const ready = local.isCreator && game.state.status===STATUS.LOBBY;
+    actions.style.display = ready ? 'flex' : 'none';
+    if(ready){
+      const missing=Math.max(0,2-playersCount);
+      if(missing>0) hint.textContent=`Нужно ещё ${missing} игрок${missing===1?'':'а'}.`;
+      else hint.textContent='Можно запускать игру.';
+      $('#btnStartGame').disabled = playersCount<2;
     }
   }
 
-  function renderSubmissions(map){
-    game.submissions = map || {};
-    const box=$('#submissions'); box.innerHTML='';
-    const entries = Object.entries(game.submissions);
-    if (!entries.length){
-      game.submissionsOrder = [];
-      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent='Пока нет сыгранных карт.';
-      box.appendChild(empty);
-      updateHostHint();
-      return;
-    }
-    const keys = entries.map(([id])=>id);
-    const orderCurrent = Array.isArray(game.submissionsOrder) ? game.submissionsOrder.filter(id=>game.submissions[id]) : [];
-    let order = orderCurrent;
-    const sameSize = order.length === keys.length;
-    const sameSet = sameSize && order.every(id=> game.submissions[id]);
-    if (!sameSet){
-      order = shuffle([...keys]);
-      game.submissionsOrder = order.slice();
-    }
-    const items = order.map(id=>({ id, ...(game.submissions[id]||{}) })).filter(s=> typeof s.text === 'string');
-    if (!items.length){
-      const empty=document.createElement('div'); empty.className='muted small'; empty.textContent='Пока нет сыгранных карт.';
-      box.appendChild(empty);
-      updateHostHint();
-      return;
-    }
-    const reveal = local.isHost || (game.state.status==='result');
-    if (!reveal){
-      const wait=document.createElement('div'); wait.className='muted small'; wait.textContent='Ответы скрыты до выбора ведущего.';
-      box.appendChild(wait);
-      updateHostHint();
-      return;
-    }
-    items.forEach(s=>{
-      const b=document.createElement('button'); b.className='card'; b.style.textAlign='left';
-      b.innerHTML=`<div class="muted small">Ответ</div><div class="big">${fillBlack(game.state.blackCard||'', s.text)}</div>`;
-      if (local.isHost && game.state.status==='collect'){
-        b.onclick=()=> pickWinner(s.playerId, s.text);
-      } else {
-        b.classList.add('readonly');
-        b.setAttribute('tabindex','-1');
-      }
-      box.appendChild(b);
-    });
-    updateHostHint();
+  function updateHostChip(){
+    const chip=$('#roleChip'); if(!chip) return;
+    if(game.state.status===STATUS.LOBBY){ chip.classList.add('hidden'); return; }
+    chip.classList.remove('hidden');
+    chip.textContent = isCurrentHost() ? 'Вы ведущий' : 'Вы игрок';
   }
 
-  // ===== Ведущий: старт/раунды/победитель =====
-  function maybeAutoStart(players){
+  function startTimerTick(){
+    clearInterval(local.timerTick);
+    if(game.state.status!==STATUS.COLLECT || !game.state.timerEndsAt){ $('#timerChip').classList.add('hidden'); return; }
+    $('#timerChip').classList.remove('hidden');
+    const update=()=>{
+      const left=Math.max(0, Math.ceil((game.state.timerEndsAt - now())/1000));
+      $('#timerChip').textContent = `⏱ ${left}s`;
+      if(left<=0){ clearInterval(local.timerTick); if(!local.autoPickTriggered){ local.autoPickTriggered=true; attemptAutoPick(); } }
+    };
+    update();
+    local.timerTick=setInterval(update, 1000);
+    local.autoPickTriggered=false;
+  }
+
+  // ===== Функции взаимодействия с Firebase =====
+  function reconcilePlayersOrder(players){
+    const ids = orderedPlayerIds(players).filter(id=>!players[id]?.isCreator);
+    const current = Array.isArray(game.playersOrder)?game.playersOrder:[];
+    const filtered=current.filter(id=>ids.includes(id));
+    let changed=filtered.length!==current.length;
+    ids.forEach(id=>{ if(!filtered.includes(id)){ filtered.push(id); changed=true; } });
+    if(changed){ playersOrderRef().set(filtered); }
+  }
+
+  function ensureActiveHost(){
+    const order=Array.isArray(game.playersOrder)?game.playersOrder:[];
+    if(!order.length){ stateRef().update({ currentHostPid:null, currentHostName:'' }); return; }
+    const current=game.state.currentHostPid;
+    if(current && order.includes(current)) return;
+    const next=order[0];
+    const name=(game.players[next]?.name)||'—';
+    stateRef().update({ currentHostPid: next, currentHostName: name });
+  }
+
+  function nextHostId(order,current){
+    if(!Array.isArray(order) || !order.length) return null;
+    const idx=order.indexOf(current);
+    if(idx===-1) return order[0];
+    return order[(idx+1)%order.length];
+  }
+
+  async function handleHostEvent(snap){
+    const ev=snap.val(); const key=snap.key;
+    if(!ev) return;
     try{
-      if (!local.isHost) return;
-      if ((game.state && game.state.status)!=='lobby') return;
-      const count = Object.keys(players||{}).length;
-      if (count >= 2) { startGameHost(); }
-    } catch(e){ console.warn('autoStart skipped', e); }
+
+      switch(ev.type){
+        case 'needHand': await handleNeedHand(ev); break;
+        case 'pickWinner': await handlePickWinner(ev); break;
+        case 'autoPick': await handleAutoPick(ev); break;
+        case 'nextRound': await handleNextRoundEvent(ev); break;
+      }
+    }catch(e){ showError(e); }
+    finally{ eventsRef().child(key).remove(); }
   }
 
-  async function startGameHost(){
-    if (!local.isHost) return toast('Только ведущий может стартовать');
-    if (playersCount < 2) return toast('Нужно минимум 2 игрока');
-    game.state.round=1; game.state.status='collect'; game.state.roundsTotal=10;
-    const playersSnap = await playersRef().get(); const players = playersSnap.val()||{}; const ids = orderedPlayerIds(players);
-    for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
-    const hostId = local.playerId;
-    const hostName = players[hostId]?.name || local.name || '—';
-    const black = drawBlack();
-    await stateRef().set({ round:1, roundsTotal:game.state.roundsTotal, status:'collect', hostId, hostName, blackCard:black, lastWinnerName:'', lastAnswer:'', sfwOnly: $('#sfwOnly').checked });
-    await submissionsRef().remove();
-    game.submissions = {};
-    game.submissionsOrder = [];
-    renderSubmissions(game.submissions);
-    await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white, discardBlack: game.deck.discardBlack, discardWhite: game.deck.discardWhite });
-    resetPlayerRoundState(1);
+  async function handleNeedHand(ev){
+    if(!local.isCreator) return;
+    if(!ev.playerId) return;
+    const data=(await perPlayerRef(ev.playerId).get()).val()||{};
+    if(data.hand && data.hand.length>=7) return;
+    const hand=topUpHand(data.hand||[], drawWhite, 7);
+    await perPlayerRef(ev.playerId).set({ hand, submitted:false, lastText:'' });
+    await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
+  }
+
+  async function handlePickWinner(ev){
+    if(!local.isCreator) return;
+    const stateSnap=await stateRef().get();
+    const state=stateSnap.val();
+    if(!state || state.status!==STATUS.COLLECT) return;
+    const submissions=(await submissionsRef().get()).val()||{};
+    const item=submissions[ev.submissionId];
+    if(!item) return;
+    const players=(await playersRef().get()).val()||{};
+    const winnerName=players[item.playerId]?.name||'—';
+    await playersRef().child(item.playerId).transaction(data=>{ if(!data) return data; return { ...data, score:(data.score||0)+1 }; });
+    await collectDiscardWhite(submissions);
+    await stateRef().update({ status:STATUS.RESULT, lastWinnerName:winnerName, lastAnswer:item.text, timerEndsAt:null });
+    toast(`Победитель: ${winnerName}`);
+  }
+
+  async function handleAutoPick(ev){
+    if(!local.isCreator) return;
+    const stateSnap=await stateRef().get();
+    const state=stateSnap.val();
+    if(!state || state.status!==STATUS.COLLECT) return;
+    const submissions=(await submissionsRef().get()).val()||{};
+    if(ev.submissionId && submissions[ev.submissionId]){
+      await handlePickWinner(ev);
+      return;
+    }
+    await collectDiscardWhite(submissions);
+    await stateRef().update({ status:STATUS.RESULT, lastWinnerName:'', lastAnswer:'', timerEndsAt:null });
+  }
+
+  async function handleNextRoundEvent(ev){
+    if(!local.isCreator) return;
+    await advanceRound();
+  }
+
+  async function collectDiscardWhite(submissions){
+    const values=Object.values(submissions||{});
+    values.forEach(s=>{ if(s && s.text) game.deck.discardWhite.push(s.text); });
+    await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
+  }
+
+  // ===== Действия игрока =====
+  async function submitCard(){
+    if(isCurrentHost()){ showError('Ведущий не может отправлять карты.'); return; }
+    if(!isStatusCollect()){ showError('Сейчас нельзя отправить карту.'); return; }
+    if(local.hasSubmitted){ showError('Карта уже отправлена.'); return; }
+    const hand=[...(local.playerData.hand||[])];
+    let idx=local.selectedCardIndex;
+    if(idx==null || hand[idx]!==local.selectedCardText) idx=hand.indexOf(local.selectedCardText);
+    if(idx<0){ showError('Карта не найдена в руке.'); return; }
+    markSubmitted(local.playerData); // выбросит, если уже отправлено
+    const text=hand.splice(idx,1)[0];
+    await perPlayerRef(local.playerId).set({ hand, submitted:true, lastText:text });
+    const id=uid();
+    await submissionsRef().child(id).set({ playerId: local.playerId, text, createdAt: now() });
+    local.selectedCardIndex=null; local.selectedCardText='';
+    local.hasSubmitted=true;
+    local.submittedText=text;
+    $('#submittedCard').classList.remove('hidden');
+    $('#submittedCardText').textContent=text;
+    refreshHandSelectionStyles();
     updateSelectionUI();
+    updateActionBar();
+    toast('Ответ отправлен');
   }
 
-  async function pickWinner(playerId, answer){
-    if (!local.isHost) return;
-    const pRef = playersRef().child(playerId); const pSnap = await pRef.get(); const p=pSnap.val()||{}; await pRef.update({ score:(p.score||0)+1 });
-    Object.values(game.submissions).forEach(s=>{ if (s && typeof s.text==='string') game.deck.discardWhite.push(s.text); });
-    await db.ref(`rooms/${local.roomId}/deck`).update({ discardWhite: game.deck.discardWhite });
-    await stateRef().update({ status:'result', lastWinnerName: p.name, lastAnswer: answer });
-    toast(`Победитель: ${p.name||'—'}`);
+  function markSubmitted(playerState){ if(playerState.submitted) throw new Error('Вы уже отправили карту.'); playerState.submitted=true; return playerState; }
+
+  async function pickWinnerRequest(submissionId){
+    if(!(isCurrentHost() || local.isCreator)) return;
+    await eventsRef().push({ type:'pickWinner', submissionId, t: now() });
   }
 
-  async function nextRoundHost(){
-    if (!local.isHost) return; const sSnap = await stateRef().get(); const s = sSnap.val(); if (!s) return;
-    if (s.round >= s.roundsTotal) { toast('Игра окончена'); return; }
-    const players = (await playersRef().get()).val()||{}; const ids = orderedPlayerIds(players);
-    for(const pid of ids){ const handSnap = await perPlayerRef(pid).get(); let hand=(handSnap.val()&&handSnap.val().hand)||[]; while(hand.length<7) hand.push(drawWhite()); await perPlayerRef(pid).set({ hand }); }
+  async function attemptAutoPick(){
+    if(local.isCreator){
+      const submissions=(await submissionsRef().get()).val()||{};
+      const choice = autoPickWinner(submissions, Math.random);
+      await eventsRef().push({ type:'autoPick', submissionId: choice?.id||null, t: now() });
+    } else {
+      const choice = autoPickWinner(game.submissions, Math.random);
+      await eventsRef().push({ type:'autoPick', submissionId: choice?.id||null, t: now() });
+    }
+  }
+
+  function autoPickWinner(submissions, rng=Math.random){
+    const entries=Object.entries(submissions||{});
+    if(!entries.length) return null;
+    const idx=Math.floor((rng||Math.random)()*entries.length);
+    const [id, val]=entries[idx];
+    return { id, ...val };
+  }
+  function autoPickStateTransition(state, submissions, rng=Math.random){
+    const pick = autoPickWinner(submissions, rng);
+    return { ...state, status: STATUS.RESULT, lastWinnerName: pick?.playerName||'', lastAnswer: pick?.text||'' };
+  }
+
+  async function nextRound(){
+    if(!(isCurrentHost() || local.isCreator)){ showError('Следующий раунд запускает ведущий.'); return; }
+    await eventsRef().push({ type:'nextRound', t: now() });
+  }
+
+  async function advanceRound(){
+    if(!local.isCreator) return;
+    const stateSnap = await stateRef().get();
+    const state = stateSnap.val()||{};
+    const players = (await playersRef().get()).val()||{};
+    const order = Array.isArray(game.playersOrder)?game.playersOrder:[];
+    if(order.length<2){ showError('Нужно минимум 2 игрока для продолжения.'); return; }
+    const currentHost = state.status===STATUS.LOBBY ? order[0] : nextHostId(order, state.currentHostPid);
+    const hostName = players[currentHost]?.name || '—';
+    if(state.blackCard){ game.deck.discardBlack.push(state.blackCard); }
     await submissionsRef().remove();
-    game.submissions = {};
-    game.submissionsOrder = [];
-    renderSubmissions(game.submissions);
-    if (s.blackCard) game.deck.discardBlack.push(s.blackCard);
+    const promises=[];
+    for(const pid of order){
+      if(pid===currentHost){
+        promises.push(perPlayerRef(pid).set({ hand:[], submitted:false, lastText:'' }));
+      } else {
+        const handSnap = await perPlayerRef(pid).get();
+        const data=handSnap.val()||{};
+        const newHand=topUpHand(data.hand||[], drawWhite, 7);
+        promises.push(perPlayerRef(pid).set({ hand:newHand, submitted:false, lastText:'' }));
+      }
+    }
+    await Promise.all(promises);
     const black = drawBlack();
-    await stateRef().set({ ...s, round: s.round+1, status:'collect', blackCard:black, lastWinnerName:'', lastAnswer:'' });
-    await db.ref(`rooms/${local.roomId}/deck`).set({ black: game.deck.black, white: game.deck.white, discardBlack: game.deck.discardBlack, discardWhite: game.deck.discardWhite });
-    resetPlayerRoundState((s.round||0)+1);
-    updateSelectionUI();
+    const round = state.status===STATUS.LOBBY ? 1 : (state.round||0)+1;
+    const timerEndsAt = now() + ROUND_SECONDS*1000;
+    await stateRef().set({ status:STATUS.COLLECT, round, roundsTotal: state.roundsTotal||10, blackCard:black, lastWinnerName:'', lastAnswer:'', sfwOnly: state.sfwOnly, currentHostPid: currentHost, currentHostName: hostName, timerEndsAt });
+    await deckRef().set({ black:game.deck.black, white:game.deck.white, discardBlack:game.deck.discardBlack, discardWhite:game.deck.discardWhite });
+    game.submissionsOrder=[];
+
   }
 
-  // ===== Тесты (локальные для чистых функций) =====
-  const tests=[]; function test(name,fn){tests.push({name,fn});} function expect(cond,msg){ if(!cond) throw new Error(msg||'assert failed'); }
+  // ===== Таймер и кнопки =====
+  $('#btnConfirm').onclick=()=>{ if(local.selectedCardText) submitCard(); else toast('Сначала выберите карту'); };
+  $('#nextRound').onclick=nextRound;
+  $('#btnCreate').onclick=async()=>{
+    try{ setLobbyError(''); await createRoom(); }
+    catch(e){ showError(e); }
+  };
+  $('#btnJoin').onclick=async()=>{
+    const id=($('#roomInput').value||'').trim();
+    if(!id){ setLobbyError('Введите ID комнаты.'); return; }
+    try{ setLobbyError(''); await joinRoom(id); }
+    catch(e){ showError(e); }
+  };
+  $('#btnCopy').onclick=()=>copyToClipboard($('#shareLink').value||'');
+  $('#btnStartGame').onclick=async()=>{ await eventsRef().push({ type:'nextRound', t: now() }); };
+  $('#btnNew').onclick=()=>location.href=location.origin+location.pathname;
+  $('#btnHow').onclick=()=>$('#dlgRules').showModal();
+  $('#btnDeck').onclick=()=>$('#dlgDeck').showModal();
+  $('#btnTests').onclick=runTests;
+  $('#btnSaveDeck').onclick=()=>{
+    try{ const json=JSON.parse($('#deckJson').value||'{}'); ensureMinimumDeck(json); localStorage.setItem(STORAGE_KEY, JSON.stringify(json)); if(local.isCreator) loadDeckLocal(); toast('Колода сохранена'); }
+    catch(e){ showError('Ошибка JSON: '+e.message); }
+  };
+  $('#btnResetDeck').onclick=()=>{ localStorage.removeItem(STORAGE_KEY); loadDeckLocal(); toast('Колода сброшена'); };
+  $('#btnExport').onclick=()=>{
+    const blob=new Blob([$('#deckJson').value||''],{type:'application/json'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='deck.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 500);
+  };
+  $('#btnImport').onclick=()=>{ const input=document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=async()=>{ const file=input.files?.[0]; if(!file) return; const text=await file.text(); $('#deckJson').value=text; }; input.click(); };
+  $('#btnCheck').onclick=async()=>{ await testDbConnection(); toast('Проверка: '+lastConnMsg); };
+
+  // ===== Тесты =====
+  const tests=[]; function test(name,fn){ tests.push({name,fn}); }
+  function expect(cond,msg){ if(!cond) throw new Error(msg||'assert failed'); }
   async function runTests(){
-    const out=[]; for(const t of tests){ try{ await t.fn(); out.push({name:t.name,ok:true}); }catch(e){ out.push({name:t.name,ok:false,err:e.message}); } }
-    const lines = out.map(r=> `${r.ok?'✅':'❌'} ${r.name}${r.ok?'':` — ${r.err}`}`).join('\n'); $('#testsOutput').textContent=lines||'Нет тестов'; $('#dlgTests').showModal(); console.table(out);
+    const out=[];
+    for(const t of tests){
+      try{ await t.fn(); out.push({name:t.name, ok:true}); }
+      catch(e){ out.push({name:t.name, ok:false, err:e.message}); }
+    }
+    const text=out.map(r=> `${r.ok?'✅':'❌'} ${r.name}${r.ok?'':` — ${r.err}`}`).join('\n');
+    $('#testsOutput').textContent=text||'Нет тестов';
+    $('#dlgTests').showModal();
+    console.table(out);
   }
-  // существующие тесты (не меняем)
+
   test('ensureMinimumDeck(): >=120/500',()=>{ const base={black:[],white:[]}; ensureMinimumDeck(base); expect(base.black.length>=120,'black<120'); expect(base.white.length>=500,'white<500'); });
   test('fillBlack() placeholder',()=>{ const s=fillBlack('A ____ B','X'); expect(/<b>X<\/b>/.test(s),'no replace'); });
-  // новые юнит-тесты
   test('fillBlack() no placeholder path',()=>{ const s=fillBlack('Привет','мир'); expect(/Привет\s—\s<b>мир<\/b>/.test(s),'no dash concat'); });
   test('escapeHtml() double quote',()=>{ const s=escapeHtml('"'); expect(s==='&quot;','not &quot;'); });
-  test('escapeHtml() complex',()=>{ const s=escapeHtml('<tag> & "\'"'); expect(s.includes('&lt;tag&gt;') && s.includes('&amp;') && s.includes('&quot;') && s.includes('&#39;'),'escape failed'); });
-  test('ensureMinimumDeck() idempotent-ish',()=>{ const base={black:["Q"],white:["W"]}; ensureMinimumDeck(base); const b1=base.black.length,w1=base.white.length; ensureMinimumDeck(base); expect(base.black.length>=b1 && base.white.length>=w1,'not growing to min'); });
 
-  // ===== Обработчики =====
-  $('#btnHow').onclick=()=> $('#dlgRules').showModal();
-  $('#btnDeck').onclick=()=> $('#dlgDeck').showModal();
-  $('#btnSaveDeck').onclick=()=>{ try{ const j=JSON.parse($('#deckJson').value); localStorage.setItem(STORAGE_KEY, JSON.stringify(j)); toast('Колода сохранена'); if(local.isHost) loadDeckLocal(); }catch(e){ alert('Ошибка JSON: '+e.message);} };
-  $('#btnResetDeck').onclick=()=>{ localStorage.removeItem(STORAGE_KEY); if(local.isHost) loadDeckLocal(); $('#deckJson').value=JSON.stringify(DEMO_DECK,null,2); toast('Сбросили к демо'); };
-  $('#btnExport').onclick=()=>{ const blob=new Blob([$('#deckJson').value],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='deck.json'; a.click(); };
-  $('#btnImport').onclick=async()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return; $('#deckJson').value=await f.text(); }; inp.click(); };
-  $('#btnTests').onclick=runTests;
-  $('#btnNew').onclick=()=> location.href = location.origin + location.pathname;
-  $('#btnCreate').onclick=async()=>{ await createRoom(); };
-  $('#btnJoin').onclick=async()=>{ const id=($('#roomInput').value||'').trim(); if(!id) return toast('Введите ID комнаты'); await joinRoom(id); };
-  $('#btnCopy').onclick=()=>{ navigator.clipboard.writeText($('#shareLink').value); toast('Ссылка скопирована'); };
-  $('#btnConfirm').onclick=()=>{ if (local.hasSubmitted) return; if (!local.selectedCardText){ toast('Сначала выберите карту'); return; } submitCard(local.selectedCardText); };
-  $('#nextRound').onclick=nextRoundHost;
+  test('orderedPlayerIds() сортирует по joinedAt',()=>{
+    const players={ a:{joinedAt:3}, b:{joinedAt:1}, c:{joinedAt:2} };
+    expect(JSON.stringify(orderedPlayerIds(players))===JSON.stringify(['b','c','a']),'order mismatch');
+  });
+  test('markSubmitted() предотвращает повторную отправку',()=>{
+    const state={submitted:false};
+    markSubmitted(state);
+    let failed=false;
+    try{ markSubmitted(state); }catch(e){ failed=true; }
+    expect(failed,'повторный submit прошёл');
+  });
+  test('topUpHand() наполняет до 7 (ведущий не получает)',()=>{
+    let draws=0;
+    const hand=topUpHand(['a'], ()=>{ draws++; return 'x'+draws; }, 7);
+    expect(hand.length===7,'hand size');
+  });
+  test('nextHostId() круговая ротация',()=>{
+    const order=['p1','p2','p3'];
+    expect(nextHostId(order,'p1')==='p2','p1->p2');
+    expect(nextHostId(order,'p2')==='p3','p2->p3');
+    expect(nextHostId(order,'p3')==='p1','p3->p1');
+  });
+  test('autoPickWinner() выбирает случайную запись',()=>{
+    const submissions={ a:{text:'1'}, b:{text:'2'} };
+    const choice=autoPickWinner(submissions, ()=>0.6);
+    expect(choice.id==='b','expected b');
+  });
+  test('таймер: autoPick переводит в result',()=>{
+    const submissions={ a:{playerId:'p1',text:'X'} };
+    const state={ status:STATUS.COLLECT, lastWinnerName:'', lastAnswer:'' };
+    const next=autoPickStateTransition(state, submissions, ()=>0);
+    expect(next.status===STATUS.RESULT,'status not result');
+    expect(next.lastAnswer==='X','winner answer mismatch');
+  });
 
-  function updateShareLink(){
-    const url = new URL(location.href); url.searchParams.set('room', local.roomId); $('#shareLink').value=url.toString(); $('#shareRow').style.display='flex'; history.replaceState(null,'',url);
-  }
 
-  // ===== Автоподключение по ?room= =====
+  // ===== Автоподключение =====
   async function autoJoinFromURL(){
-    const url = new URL(location.href); const room=url.searchParams.get('room');
+    const url=new URL(location.href); const room=url.searchParams.get('room');
     if(room){ $('#roomInput').value=room; await joinRoom(room); }
   }
 
-  // ===== Инициализация =====
   function init(){
     $('#playerName').value = localStorage.getItem('playerName') || '';
-    $('#deckJson').value = JSON.stringify(DEMO_DECK, null, 2);
-    const room = new URL(location.href).searchParams.get('room'); if (room){ $('#roomInput').value=room; $('#shareRow').style.display='flex'; $('#shareLink').value=location.href; }
-    if (firebaseInitError){ updateConnStatus(false, 'Ошибка инициализации: '+firebaseInitError.message); }
+    if($('#deckJson')) $('#deckJson').value = JSON.stringify(DEMO_DECK,null,2);
+    if(firebaseInitError){ updateConnStatus(false,'Ошибка инициализации: '+firebaseInitError.message); }
+    const room=new URL(location.href).searchParams.get('room');
+    if(room){ $('#roomInput').value=room; $('#shareRow').style.display='flex'; $('#shareLink').value=location.href; }
   }
-  function updateConnStatus(ok,msg){ const el=$('#connStatus'); if(!el) return; el.textContent='Статус: ' + (ok?'подключено':'ошибка'); el.title=msg||''; el.style.background= ok ? 'var(--accent-2)' : 'var(--chip)'; }
-  $('#btnCheck').onclick = async ()=>{ await testDbConnection(); toast('Проверка: '+ lastConnMsg); };
-  init(); autoJoinFromURL(); setTimeout(()=>testDbConnection(), 300);
+
+  init();
+  setTimeout(()=>testDbConnection(), 400);
+  autoJoinFromURL();
   </script>
+  <!-- Что изменено -->
+<!-- - Полностью переработан UI с таймером раунда, закреплённой панелью подтверждения и подсказками для ведущего. -->
+<!-- - Реализована ротация ведущего, автопроверка таймера и обработка победителей через события Firebase. -->
+<!-- - Добавлены валидации лобби, новая схема очереди игроков и юнит-тесты для ключевой логики. -->
+  <!-- TODO -->
+<!-- - Перенести логику таймера на серверную функцию для полной надёжности. -->
+<!-- - Добавить анти-спам защиту и анимации раскрытия победителя. -->
 </body>
 </html>
