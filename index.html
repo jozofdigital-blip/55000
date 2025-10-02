@@ -567,6 +567,7 @@
     }
   }
 
+  // ===== Комната: создание и вход =====
   async function createRoom(){
     if(!db){ showError(firebaseInitError||'Firebase не инициализирован'); return; }
     if(!(connectivityOk || await testDbConnection())) return;
@@ -659,6 +660,9 @@
       await collectWhiteToDiscard(submissions);
       await stateRef().update({ status:STATUS.RESULT, lastWinnerName:'', lastAnswer:'', timerEndsAt:null });
     }
+    updateSelectionUI();
+    updateHostHint();
+    updateActionBar();
   }
 
   async function collectWhiteToDiscard(submissions){
@@ -794,6 +798,15 @@
       }
       container.appendChild(btn);
     });
+    if (disabled){
+      local.selectedIndex = null;
+      local.selectedText = '';
+    } else if (local.selectedIndex !== null && local.selectedIndex >= hand.length){
+      local.selectedIndex = null;
+      local.selectedText = '';
+    }
+    refreshHandSelectionStyles();
+    updateSelectionUI();
   }
 
   function selectCard(idx,text,btn){
@@ -981,7 +994,7 @@
     const order=['p1','p2','p3'];
     expect(nextHostId(order,null)==='p1','first host не p1');
     expect(nextHostId(order,'p1')==='p2','p1 -> p2');
-    expect(nextHostId(order,'p3')==='p1','p3 -> p1');
+    expect(nextHostId(order,'p3')==='p1','п3 -> p1');
   });
 
   test('раздача до 7 белых всем не-ведущим',()=>{
@@ -990,7 +1003,7 @@
     const fill=simulateHandFill(order,'host',hands,['d','e','f','g','h','i','j','k','l']);
     expect(fill.host.length===0,'host должен остаться без карт');
     expect(fill.p1.length===7,'p1 добирает до 7');
-    expect(fill.p2.length===7,'p2 добирает до 7');
+    expect(fill.p2.length===7,'п2 добирает до 7');
   });
 
   test('таймер авто-выбор победителя',()=>{
